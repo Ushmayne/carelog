@@ -22,7 +22,7 @@ export async function getTodayCompletions(careGroupId: string) {
   const admin = createAdminClient()
   const { data } = await admin
     .from('checklist_completions')
-    .select('*, completer:profiles(full_name)')
+    .select('*')
     .eq('care_group_id', careGroupId)
     .eq('completed_date', today())
   return data ?? []
@@ -74,8 +74,6 @@ export async function toggleCompletion(itemId: string, careGroupId: string, comp
   const admin = createAdminClient()
   const date = today()
 
-  console.log('[toggleCompletion] date:', date, 'itemId:', itemId, 'complete:', complete, 'userId:', user.id)
-
   if (complete) {
     await admin
       .from('checklist_completions')
@@ -83,29 +81,20 @@ export async function toggleCompletion(itemId: string, careGroupId: string, comp
       .eq('checklist_item_id', itemId)
       .neq('completed_date', date)
 
-    const { data: inserted, error } = await admin.from('checklist_completions').insert({
+    const { error } = await admin.from('checklist_completions').insert({
       checklist_item_id: itemId,
       care_group_id: careGroupId,
       completed_by: user.id,
       completed_date: date,
-    }).select()
-    console.log('[toggleCompletion] insert result:', inserted, 'error:', error)
+    })
     if (error && error.code !== '23505') throw new Error(error.message)
   } else {
-    const { error } = await admin
+    await admin
       .from('checklist_completions')
       .delete()
       .eq('checklist_item_id', itemId)
       .eq('completed_date', date)
-    console.log('[toggleCompletion] delete error:', error)
   }
-
-  // Verify what's in DB right after insert
-  const { data: check } = await admin
-    .from('checklist_completions')
-    .select('id, checklist_item_id, completed_date')
-    .eq('care_group_id', careGroupId)
-  console.log('[toggleCompletion] all completions in DB after action:', check)
 
   revalidatePath('/checklist')
 }

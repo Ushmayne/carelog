@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { ClipboardCheck, Plus, Trash2, Loader2, Check, User } from 'lucide-react'
+import { ClipboardCheck, Plus, Trash2, Loader2, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
@@ -215,12 +215,8 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
                     )}
                     {done && completion && (
                       <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {completion.completer?.full_name
-                          ? `Completed by ${completion.completer.full_name}`
-                          : 'Completed'
-                        }
-                        {' · '}
+                        <Check className="h-3 w-3" />
+                        {'Completed · '}
                         {format(new Date(completion.created_at), 'h:mm a')}
                       </div>
                     )}
