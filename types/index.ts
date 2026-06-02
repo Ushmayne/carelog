@@ -92,6 +92,27 @@ export interface VisitNote {
   visitor?: Profile
 }
 
+export interface ChecklistItem {
+  id: string
+  care_group_id: string
+  title: string
+  description?: string
+  order_index: number
+  created_by: string
+  created_at: string
+}
+
+export interface ChecklistCompletion {
+  id: string
+  checklist_item_id: string
+  care_group_id: string
+  completed_by: string
+  completed_date: string
+  notes?: string
+  created_at: string
+  completer?: { full_name: string }
+}
+
 export interface Task {
   id: string
   care_group_id: string

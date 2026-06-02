@@ -125,14 +125,27 @@ export function TasksClient({ careGroupId, tasks, members, currentUserId }: Prop
                 <div className="space-y-2">
                   <Label>Assign To <span className="text-muted-foreground">(optional)</span></Label>
                   <Select value={assignedTo} onValueChange={v => setAssignedTo(v ?? '')}>
-                    <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Unassigned">
+                        {(value: string | null) => {
+                          if (!value) return null
+                          const m = members.find(m => m.user_id === value)
+                          if (!m) return value
+                          const name = m.profile?.full_name ?? value
+                          return m.user_id === currentUserId ? `${name} (me)` : name
+                        }}
+                      </SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
-                      {members.map(m => (
-                        <SelectItem key={m.user_id} value={m.user_id}>
-                          {m.profile?.full_name ?? m.user_id}
-                          {m.user_id === currentUserId ? ' (me)' : ''}
-                        </SelectItem>
-                      ))}
+                      {members.map(m => {
+                        const name = m.profile?.full_name ?? m.user_id
+                        const label = m.user_id === currentUserId ? `${name} (me)` : name
+                        return (
+                          <SelectItem key={m.user_id} value={m.user_id}>
+                            {label}
+                          </SelectItem>
+                        )
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -141,10 +154,10 @@ export function TasksClient({ careGroupId, tasks, members, currentUserId }: Prop
                   <Select value={priority} onValueChange={v => { if (v) setPriority(v as typeof priority) }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
+                      <SelectItem value="low" label="Low">Low</SelectItem>
+                      <SelectItem value="medium" label="Medium">Medium</SelectItem>
+                      <SelectItem value="high" label="High">High</SelectItem>
+                      <SelectItem value="urgent" label="Urgent">Urgent</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -253,7 +266,9 @@ function TaskList({ tasks, onStatus, onDelete, currentUserId }: {
                 {task.status !== 'completed' && task.status !== 'cancelled' && (
                   <Select value={task.status} onValueChange={v => { if (v) onStatus(task.id, v as 'pending' | 'in_progress' | 'completed' | 'cancelled') }}>
                     <SelectTrigger className="h-7 text-xs w-[110px]">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value: string | null) => statusConfig[value as keyof typeof statusConfig]?.label ?? value}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pending">Pending</SelectItem>

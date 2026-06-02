@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   X,
+  ClipboardCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -27,6 +28,7 @@ const navItems = [
   { href: '/appointments', label: 'Appointments', icon: Calendar },
   { href: '/visits', label: 'Visit Notes', icon: ClipboardList },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
+  { href: '/checklist', label: 'Daily Checklist', icon: ClipboardCheck },
   { href: '/family', label: 'Family', icon: Users },
 ]
 
