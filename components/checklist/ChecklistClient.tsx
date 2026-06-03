@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { ClipboardCheck, Plus, Trash2, Loader2, Check, ChevronLeft, ChevronRight, User } from 'lucide-react'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ClipboardCheck, Plus, Trash2, Loader2, Check, ChevronLeft, ChevronRight, User, CalendarIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
@@ -31,6 +33,7 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [calendarOpen, setCalendarOpen] = useState(false)
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(
     () => new Set(todayCompletions.map(c => c.checklist_item_id))
@@ -52,6 +55,15 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
     const todayStr = new Date().toISOString().split('T')[0]
     if (newDateStr > todayStr) return
     router.push(newDateStr === todayStr ? '/checklist' : `/checklist?date=${newDateStr}`)
+  }
+
+  function handleCalendarSelect(date: Date | undefined) {
+    if (!date) return
+    const todayStr = new Date().toISOString().split('T')[0]
+    const picked = date.toISOString().split('T')[0]
+    if (picked > todayStr) return
+    setCalendarOpen(false)
+    router.push(picked === todayStr ? '/checklist' : `/checklist?date=${picked}`)
   }
 
   async function handleToggle(itemId: string) {
@@ -163,11 +175,23 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateDate(-1)}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <span className="text-sm font-medium">
-          {isToday
-            ? `Today · ${format(selectedDateObj, 'MMMM d')}`
-            : format(selectedDateObj, 'EEEE, MMMM d')}
-        </span>
+        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+          <PopoverTrigger render={<Button variant="ghost" size="sm" className="gap-1.5 text-sm font-medium h-8 px-2" />}>
+            <CalendarIcon className="h-3.5 w-3.5" />
+            {isToday
+              ? `Today · ${format(selectedDateObj, 'MMMM d')}`
+              : format(selectedDateObj, 'EEEE, MMMM d')}
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={selectedDateObj}
+              onSelect={handleCalendarSelect}
+              disabled={{ after: new Date() }}
+              defaultMonth={selectedDateObj}
+            />
+          </PopoverContent>
+        </Popover>
         <Button
           variant="ghost"
           size="icon"
