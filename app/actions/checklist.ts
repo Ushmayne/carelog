@@ -18,14 +18,30 @@ export async function getChecklistItems(careGroupId: string) {
   return data ?? []
 }
 
-export async function getTodayCompletions(careGroupId: string) {
+export async function getCompletionsForDate(careGroupId: string, date?: string) {
   const admin = createAdminClient()
-  const { data } = await admin
+  const targetDate = date ?? today()
+
+  const { data: completions } = await admin
     .from('checklist_completions')
     .select('*')
     .eq('care_group_id', careGroupId)
-    .eq('completed_date', today())
-  return data ?? []
+    .eq('completed_date', targetDate)
+
+  if (!completions?.length) return []
+
+  const userIds = [...new Set(completions.map((c: any) => c.completed_by as string))]
+  const { data: profiles } = await admin
+    .from('profiles')
+    .select('id, full_name')
+    .in('id', userIds)
+
+  const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, { full_name: p.full_name }]))
+
+  return completions.map((c: any) => ({
+    ...c,
+    completer: profileMap.get(c.completed_by) ?? null,
+  }))
 }
 
 export async function addChecklistItem(careGroupId: string, title: string, description?: string) {
