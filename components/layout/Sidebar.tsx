@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   ClipboardCheck,
+  UserCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -91,7 +92,20 @@ export function Sidebar({ careGroupName, recipientName }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="px-3 py-4 border-t border-border">
+      <div className="px-3 py-4 border-t border-border space-y-1">
+        <Link
+          href="/profile"
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+            pathname === '/profile'
+              ? 'bg-blue-50 text-blue-700'
+              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+          )}
+        >
+          <UserCircle className="h-4 w-4 flex-shrink-0" />
+          Profile
+        </Link>
         <Button
           variant="ghost"
           size="sm"
