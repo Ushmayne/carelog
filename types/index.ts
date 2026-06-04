@@ -35,6 +35,7 @@ export interface GroupMember {
   care_group_id: string
   user_id: string
   role: 'admin' | 'member'
+  status: 'pending' | 'approved'
   joined_at: string
   profile?: Profile
 }
@@ -48,6 +49,7 @@ export interface Medication {
   instructions?: string
   prescribing_doctor?: string
   active: boolean
+  scheduled_times?: string[]
   created_by: string
   created_at: string
 }
@@ -125,7 +127,46 @@ export interface Task {
   priority: 'low' | 'medium' | 'high' | 'urgent'
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
   completed_at?: string
+  recurrence?: 'daily' | 'weekly' | 'biweekly' | 'monthly' | null
+  recurrence_ends_at?: string | null
+  parent_task_id?: string | null
   created_at: string
   assignee?: Profile
   creator?: Profile
+}
+
+export interface VitalReading {
+  id: string
+  care_group_id: string
+  type: 'blood_pressure' | 'heart_rate' | 'weight' | 'blood_sugar' | 'temperature' | 'oxygen_saturation'
+  value: string
+  unit: string
+  notes?: string
+  recorded_by: string
+  recorded_at: string
+  created_at: string
+  recorder?: Pick<Profile, 'full_name'>
+}
+
+export interface CareDocument {
+  id: string
+  care_group_id: string
+  name: string
+  description?: string
+  category: 'medical_record' | 'insurance' | 'prescription' | 'test_result' | 'other'
+  file_url: string
+  file_name: string
+  file_type: string
+  file_size?: number
+  uploaded_by: string
+  created_at: string
+  uploader?: Pick<Profile, 'full_name'>
+}
+
+export interface ActivityItem {
+  id: string
+  type: 'medication_given' | 'medication_skipped' | 'visit' | 'task_completed' | 'appointment_completed' | 'vital_recorded'
+  title: string
+  subtitle: string
+  timestamp: string
 }

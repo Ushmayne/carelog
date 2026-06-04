@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { createCareGroup, joinCareGroup } from '@/app/actions/care-group'
@@ -42,8 +42,8 @@ export function SetupGroup() {
     setLoading(true)
     try {
       await joinCareGroup(inviteCode)
-      toast.success('Joined care group!')
-      router.refresh()
+      toast.success('Request sent! The group admin will need to approve your membership.')
+      setInviteCode('')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to join group')
     } finally {
@@ -52,10 +52,10 @@ export function SetupGroup() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <div className="inline-flex bg-blue-600 rounded-2xl p-3 mb-4">
+          <div className="inline-flex bg-teal-600 rounded-2xl p-3 mb-4">
             <Heart className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Welcome to CareLog</h1>
@@ -115,7 +115,7 @@ export function SetupGroup() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-600" />
+                  <Users className="h-5 w-5 text-teal-600" />
                   Join an existing group
                 </CardTitle>
                 <CardDescription>Enter the invite code shared by your family member</CardDescription>

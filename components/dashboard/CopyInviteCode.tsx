@@ -16,7 +16,7 @@ export function CopyInviteCode({ code }: { code: string }) {
   }
 
   return (
-    <div className="flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2">
+    <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2">
       <div>
         <div className="text-xs text-muted-foreground">Invite code</div>
         <div className="text-sm font-mono font-semibold">{code}</div>

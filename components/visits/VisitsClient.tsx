@@ -100,9 +100,9 @@ export function VisitsClient({ careGroupId, visits }: Props) {
                 <Select value={mood} onValueChange={v => setMood((v ?? '') as 'good' | 'fair' | 'poor')}>
                   <SelectTrigger><SelectValue placeholder="How was their mood?" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="good">😊 Good</SelectItem>
-                    <SelectItem value="fair">😐 Fair</SelectItem>
-                    <SelectItem value="poor">😟 Poor</SelectItem>
+                    <SelectItem value="good" label="😊 Good">😊 Good</SelectItem>
+                    <SelectItem value="fair" label="😐 Fair">😐 Fair</SelectItem>
+                    <SelectItem value="poor" label="😟 Poor">😟 Poor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

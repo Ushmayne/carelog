@@ -12,11 +12,15 @@ export default async function FamilyPage() {
 
   const members = await getGroupMembers(group.id)
 
+  const currentUserMember = members.find(m => m.user_id === user?.id)
+  const currentUserRole = currentUserMember?.role ?? 'member'
+
   return (
     <FamilyClient
       group={group}
       members={members}
       currentUserId={user?.id ?? ''}
+      currentUserRole={currentUserRole}
     />
   )
 }

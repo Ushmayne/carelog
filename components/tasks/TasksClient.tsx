@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { createTask, updateTaskStatus, deleteTask } from '@/app/actions/tasks'
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CheckSquare, Plus, Loader2, Trash2, Check, User, Clock } from 'lucide-react'
+import { CheckSquare, Plus, Loader2, Trash2, Check, User, Clock, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
 import type { Task, GroupMember } from '@/types'
@@ -26,7 +26,7 @@ interface Props {
 
 const priorityConfig = {
   low: { label: 'Low', className: 'bg-gray-100 text-gray-600' },
-  medium: { label: 'Medium', className: 'bg-blue-100 text-blue-700' },
+  medium: { label: 'Medium', className: 'bg-teal-100 text-teal-700' },
   high: { label: 'High', className: 'bg-orange-100 text-orange-700' },
   urgent: { label: 'Urgent', className: 'bg-red-100 text-red-700' },
 }
@@ -48,6 +48,8 @@ export function TasksClient({ careGroupId, tasks, members, currentUserId }: Prop
   const [assignedTo, setAssignedTo] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium')
+  const [recurrence, setRecurrence] = useState<'daily' | 'weekly' | 'biweekly' | 'monthly' | ''>('')
+  const [recurrenceEndsAt, setRecurrenceEndsAt] = useState('')
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -59,10 +61,13 @@ export function TasksClient({ careGroupId, tasks, members, currentUserId }: Prop
         assigned_to: assignedTo || undefined,
         due_date: dueDate || undefined,
         priority,
+        recurrence: recurrence || null,
+        recurrence_ends_at: recurrenceEndsAt || null,
       })
       toast.success('Task created')
       setOpen(false)
       setTitle(''); setDescription(''); setAssignedTo(''); setDueDate(''); setPriority('medium')
+      setRecurrence(''); setRecurrenceEndsAt('')
       router.refresh()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create task')
@@ -141,7 +146,7 @@ export function TasksClient({ careGroupId, tasks, members, currentUserId }: Prop
                         const name = m.profile?.full_name ?? m.user_id
                         const label = m.user_id === currentUserId ? `${name} (me)` : name
                         return (
-                          <SelectItem key={m.user_id} value={m.user_id}>
+                          <SelectItem key={m.user_id} value={m.user_id} label={label}>
                             {label}
                           </SelectItem>
                         )
@@ -165,6 +170,32 @@ export function TasksClient({ careGroupId, tasks, members, currentUserId }: Prop
               <div className="space-y-2">
                 <Label>Due Date <span className="text-muted-foreground">(optional)</span></Label>
                 <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Repeat <span className="text-muted-foreground">(optional)</span></Label>
+                <Select value={recurrence} onValueChange={v => setRecurrence(v as typeof recurrence)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Does not repeat">
+                      {(v: string | null) => {
+                        const map: Record<string, string> = { daily: 'Daily', weekly: 'Weekly', biweekly: 'Every 2 weeks', monthly: 'Monthly' }
+                        return v ? map[v] ?? 'Does not repeat' : 'Does not repeat'
+                      }}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Does not repeat</SelectItem>
+                    <SelectItem value="daily" label="Daily">Daily</SelectItem>
+                    <SelectItem value="weekly" label="Weekly">Weekly</SelectItem>
+                    <SelectItem value="biweekly" label="Every 2 weeks">Every 2 weeks</SelectItem>
+                    <SelectItem value="monthly" label="Monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+                {recurrence && (
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Ends on (optional)</Label>
+                    <Input type="date" value={recurrenceEndsAt} onChange={e => setRecurrenceEndsAt(e.target.value)} />
+                  </div>
+                )}
               </div>
               <div className="flex gap-2 pt-2">
                 <Button type="submit" disabled={loading} className="flex-1">
@@ -228,7 +259,7 @@ function TaskList({ tasks, onStatus, onDelete, currentUserId }: {
               <button
                 onClick={() => onStatus(task.id, isCompleted ? 'pending' : 'completed')}
                 className={`mt-0.5 h-5 w-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                  isCompleted ? 'bg-blue-600 border-blue-600' : 'border-gray-300 hover:border-blue-600'
+                  isCompleted ? 'bg-teal-600 border-teal-600' : 'border-gray-300 hover:border-teal-600'
                 }`}
               >
                 {isCompleted && <Check className="h-3 w-3 text-white" />}
@@ -258,6 +289,12 @@ function TaskList({ tasks, onStatus, onDelete, currentUserId }: {
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       Due {format(parseISO(task.due_date), 'MMM d')}
+                    </span>
+                  )}
+                  {task.recurrence && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <RefreshCw className="h-3 w-3" />
+                      {task.recurrence === 'biweekly' ? 'Every 2 wks' : task.recurrence}
                     </span>
                   )}
                 </div>

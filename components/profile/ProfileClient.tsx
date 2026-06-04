@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
@@ -82,7 +82,7 @@ export function ProfileClient({ profile }: Props) {
     <div className="p-6 max-w-2xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <User className="h-6 w-6 text-blue-600" />
+          <User className="h-6 w-6 text-teal-600" />
           My Profile
         </h1>
         <p className="text-muted-foreground text-sm mt-1">Manage your personal information</p>
@@ -101,7 +101,7 @@ export function ProfileClient({ profile }: Props) {
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={fullName} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="h-full w-full bg-blue-100 flex items-center justify-center text-blue-700 text-2xl font-semibold">
+                    <div className="h-full w-full bg-teal-100 flex items-center justify-center text-teal-700 text-2xl font-semibold">
                       {fullName ? getInitials(fullName) : '?'}
                     </div>
                   )}

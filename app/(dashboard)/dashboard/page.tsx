@@ -1,13 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@/lib/supabase/server'
 import { getUserCareGroup } from '@/app/actions/care-group'
 import { getMedications, getMedicationLogs } from '@/app/actions/medications'
 import { getAppointments } from '@/app/actions/appointments'
 import { getVisitNotes } from '@/app/actions/visits'
 import { getTasks } from '@/app/actions/tasks'
+import { getLatestVitals } from '@/app/actions/vitals'
 import { SetupGroup } from '@/components/onboarding/SetupGroup'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Pill, Calendar, ClipboardList, CheckSquare, Copy, Users } from 'lucide-react'
+import { Pill, Calendar, ClipboardList, CheckSquare, Copy, Users, Activity, ShieldAlert } from 'lucide-react'
 import { format, isAfter, isBefore, addDays, parseISO } from 'date-fns'
 import Link from 'next/link'
 import { CopyInviteCode } from '@/components/dashboard/CopyInviteCode'
@@ -22,12 +23,13 @@ export default async function DashboardPage() {
     return <SetupGroup />
   }
 
-  const [medications, recentLogs, appointments, visits, tasks] = await Promise.all([
+  const [medications, recentLogs, appointments, visits, tasks, latestVitals] = await Promise.all([
     getMedications(group.id),
     getMedicationLogs(group.id, 5),
     getAppointments(group.id),
     getVisitNotes(group.id),
     getTasks(group.id),
+    getLatestVitals(group.id),
   ])
 
   const now = new Date()
@@ -45,28 +47,38 @@ export default async function DashboardPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8 rounded-xl bg-gradient-to-br from-teal-50 to-emerald-50/40 border border-teal-100/80 px-5 py-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {recipient ? `Caring for ${recipient.name}` : group.name}
-            </h1>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-sm text-teal-600/70 mb-1">
               {format(now, 'EEEE, MMMM d, yyyy')}
             </p>
+            <h1 className="text-2xl font-bold text-foreground">
+              {recipient ? `Caring for ${recipient.name}` : group.name}
+            </h1>
           </div>
-          <CopyInviteCode code={group.invite_code} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              href={`/emergency/${group.invite_code}`}
+              target="_blank"
+              className="flex items-center gap-1.5 text-xs text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium transition-colors"
+            >
+              <ShieldAlert className="h-3.5 w-3.5" />
+              Emergency Info
+            </Link>
+            <CopyInviteCode code={group.invite_code} />
+          </div>
         </div>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         <StatCard
-          icon={<Pill className="h-5 w-5 text-blue-600" />}
+          icon={<Pill className="h-5 w-5 text-teal-600" />}
           label="Active Medications"
           value={activeMeds.length}
           href="/medications"
-          bg="bg-blue-50"
+          bg="bg-teal-50"
         />
         <StatCard
           icon={<Calendar className="h-5 w-5 text-emerald-600" />}
@@ -89,6 +101,13 @@ export default async function DashboardPage() {
           href="/tasks"
           bg="bg-orange-50"
         />
+        <StatCard
+          icon={<Activity className="h-5 w-5 text-rose-600" />}
+          label="Vitals Tracked"
+          value={Object.keys(latestVitals).length}
+          href="/vitals"
+          bg="bg-rose-50"
+        />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -100,7 +119,7 @@ export default async function DashboardPage() {
                 <Calendar className="h-4 w-4 text-emerald-600" />
                 Upcoming Appointments
               </CardTitle>
-              <Link href="/appointments" className="text-xs text-blue-600 hover:underline">View all</Link>
+              <Link href="/appointments" className="text-xs text-teal-600 hover:underline">View all</Link>
             </div>
           </CardHeader>
           <CardContent>
@@ -135,7 +154,7 @@ export default async function DashboardPage() {
                 <CheckSquare className="h-4 w-4 text-orange-600" />
                 My Tasks
               </CardTitle>
-              <Link href="/tasks" className="text-xs text-blue-600 hover:underline">View all</Link>
+              <Link href="/tasks" className="text-xs text-teal-600 hover:underline">View all</Link>
             </div>
           </CardHeader>
           <CardContent>
@@ -167,10 +186,10 @@ export default async function DashboardPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
-                <Pill className="h-4 w-4 text-blue-600" />
+                <Pill className="h-4 w-4 text-teal-600" />
                 Recent Medication Logs
               </CardTitle>
-              <Link href="/medications" className="text-xs text-blue-600 hover:underline">View all</Link>
+              <Link href="/medications" className="text-xs text-teal-600 hover:underline">View all</Link>
             </div>
           </CardHeader>
           <CardContent>
@@ -180,8 +199,8 @@ export default async function DashboardPage() {
               <div className="space-y-3">
                 {recentLogs.map(log => (
                   <div key={log.id} className="flex items-start gap-3">
-                    <div className={`rounded-lg p-2 flex-shrink-0 ${log.skipped ? 'bg-red-50' : 'bg-blue-50'}`}>
-                      <Pill className={`h-4 w-4 ${log.skipped ? 'text-red-500' : 'text-blue-600'}`} />
+                    <div className={`rounded-lg p-2 flex-shrink-0 ${log.skipped ? 'bg-red-50' : 'bg-teal-50'}`}>
+                      <Pill className={`h-4 w-4 ${log.skipped ? 'text-red-500' : 'text-teal-600'}`} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium">
@@ -207,7 +226,7 @@ export default async function DashboardPage() {
                 <ClipboardList className="h-4 w-4 text-purple-600" />
                 Recent Visits
               </CardTitle>
-              <Link href="/visits" className="text-xs text-blue-600 hover:underline">View all</Link>
+              <Link href="/visits" className="text-xs text-teal-600 hover:underline">View all</Link>
             </div>
           </CardHeader>
           <CardContent>
@@ -244,12 +263,12 @@ function StatCard({ icon, label, value, href, bg }: {
   bg: string
 }) {
   return (
-    <Link href={href}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer">
-        <CardContent className="pt-5 pb-4">
-          <div className={`inline-flex rounded-lg p-2 ${bg} mb-3`}>{icon}</div>
-          <div className="text-2xl font-bold">{value}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
+    <Link href={href} className="h-full">
+      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+        <CardContent className="pt-6 pb-5">
+          <div className={`inline-flex rounded-xl p-2.5 ${bg} mb-4`}>{icon}</div>
+          <div className="text-3xl font-bold tracking-tight">{value}</div>
+          <div className="text-xs text-muted-foreground mt-1.5 leading-snug">{label}</div>
         </CardContent>
       </Card>
     </Link>
@@ -263,7 +282,7 @@ function EmptyState({ text }: { text: string }) {
 function PriorityDot({ priority }: { priority: string }) {
   const colors: Record<string, string> = {
     low: 'bg-gray-400',
-    medium: 'bg-blue-500',
+    medium: 'bg-teal-500',
     high: 'bg-orange-500',
     urgent: 'bg-red-500',
   }

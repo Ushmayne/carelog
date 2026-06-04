@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { getUserCareGroup } from '@/app/actions/care-group'
+import { getUserCareGroup, getUserCareGroups } from '@/app/actions/care-group'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -9,13 +9,26 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect('/login')
 
-  const group = await getUserCareGroup()
+  const [group, allGroups] = await Promise.all([
+    getUserCareGroup(),
+    getUserCareGroups(),
+  ])
+
+  const recipientName = Array.isArray(group?.care_recipient)
+    ? group.care_recipient[0]?.name
+    : group?.care_recipient?.name
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background">
       <Sidebar
         careGroupName={group?.name}
-        recipientName={group?.care_recipient?.[0]?.name ?? group?.care_recipient?.name}
+        recipientName={recipientName}
+        activeGroupId={group?.id}
+        allGroups={allGroups.map(g => ({
+          id: g.id,
+          name: g.name,
+          recipientName: (Array.isArray(g.care_recipient) ? g.care_recipient[0]?.name : g.care_recipient?.name) ?? undefined,
+        }))}
       />
       <main className="flex-1 min-w-0">
         {children}

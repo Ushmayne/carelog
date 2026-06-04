@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { createAppointment, updateAppointmentStatus, deleteAppointment } from '@/app/actions/appointments'
@@ -11,10 +11,10 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Calendar, Plus, MapPin, User, Loader2, MoreHorizontal, Check, X } from 'lucide-react'
+import { Calendar, Plus, MapPin, User, Loader2, MoreHorizontal, Check, X, AlertTriangle } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
-import { format, parseISO, isAfter } from 'date-fns'
+import { format, parseISO, isAfter, isBefore } from 'date-fns'
 import type { Appointment } from '@/types'
 import { useRouter } from 'next/navigation'
 
@@ -104,6 +104,8 @@ export function AppointmentsClient({ careGroupId, appointments }: Props) {
   const past = appointments.filter(a => a.status !== 'upcoming').sort((a, b) =>
     parseISO(b.appointment_date).getTime() - parseISO(a.appointment_date).getTime()
   )
+  // Appointments that have passed but are still marked upcoming — need outcome
+  const needsOutcome = upcoming.filter(a => isBefore(parseISO(a.appointment_date), now))
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -183,12 +185,25 @@ export function AppointmentsClient({ careGroupId, appointments }: Props) {
         </TabsList>
 
         <TabsContent value="upcoming">
+          {needsOutcome.length > 0 && (
+            <div className="flex items-start gap-3 p-4 mb-4 rounded-lg border border-amber-200 bg-amber-50">
+              <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <div className="font-medium text-amber-800 text-sm">
+                  {needsOutcome.length} appointment{needsOutcome.length > 1 ? 's' : ''} past their date — add an outcome
+                </div>
+                <div className="text-xs text-amber-700 mt-0.5">
+                  {needsOutcome.map(a => a.title).join(', ')}
+                </div>
+              </div>
+            </div>
+          )}
           {upcoming.length === 0 ? (
             <EmptyCard text="No upcoming appointments" subtext="Schedule one to stay on top of care" />
           ) : (
             <div className="space-y-3">
               {upcoming.map(appt => (
-                <ApptCard key={appt.id} appt={appt} onComplete={handleComplete} onCancel={handleCancel} onDelete={handleDelete} />
+                <ApptCard key={appt.id} appt={appt} onComplete={handleComplete} onCancel={handleCancel} onDelete={handleDelete} now={now} />
               ))}
             </div>
           )}
@@ -210,15 +225,17 @@ export function AppointmentsClient({ careGroupId, appointments }: Props) {
   )
 }
 
-function ApptCard({ appt, onComplete, onCancel, onDelete }: {
+function ApptCard({ appt, onComplete, onCancel, onDelete, now }: {
   appt: Appointment
   onComplete: (a: Appointment) => void
   onCancel: (id: string) => void
   onDelete: (id: string) => void
+  now?: Date
 }) {
+  const isOverdue = now && appt.status === 'upcoming' && isBefore(parseISO(appt.appointment_date), now)
   const statusColors: Record<string, string> = {
-    upcoming: 'bg-emerald-100 text-emerald-800',
-    completed: 'bg-blue-100 text-blue-800',
+    upcoming: isOverdue ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800',
+    completed: 'bg-teal-100 text-teal-800',
     cancelled: 'bg-gray-100 text-gray-600',
   }
 
@@ -233,7 +250,7 @@ function ApptCard({ appt, onComplete, onCancel, onDelete }: {
           <div className="flex items-start gap-2 flex-wrap">
             <span className="font-semibold">{appt.title}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColors[appt.status]}`}>
-              {appt.status}
+              {isOverdue ? 'needs outcome' : appt.status}
             </span>
           </div>
           <div className="text-sm text-muted-foreground mt-0.5">
@@ -242,26 +259,33 @@ function ApptCard({ appt, onComplete, onCancel, onDelete }: {
             {appt.location && <><MapPin className="h-3 w-3 inline mx-1" />{appt.location}</>}
           </div>
           {appt.notes && <div className="text-xs text-muted-foreground mt-1 italic">{appt.notes}</div>}
-          {appt.outcome && <div className="text-xs text-blue-700 mt-1 bg-blue-50 rounded px-2 py-1">Outcome: {appt.outcome}</div>}
+          {appt.outcome && <div className="text-xs text-teal-700 mt-1 bg-teal-50 rounded px-2 py-1">Outcome: {appt.outcome}</div>}
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" />}>
-            <MoreHorizontal className="h-4 w-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {appt.status === 'upcoming' && (
-              <>
-                <DropdownMenuItem onClick={() => onComplete(appt)}>
-                  <Check className="h-4 w-4 mr-2 text-green-600" />Mark Completed
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onCancel(appt.id)}>
-                  <X className="h-4 w-4 mr-2 text-orange-500" />Cancel
-                </DropdownMenuItem>
-              </>
-            )}
-            <DropdownMenuItem className="text-destructive" onClick={() => onDelete(appt.id)}>Delete</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {isOverdue && (
+            <Button size="sm" className="h-7 text-xs" onClick={() => onComplete(appt)}>
+              <Check className="h-3.5 w-3.5 mr-1" />Add Outcome
+            </Button>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8" />}>
+              <MoreHorizontal className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {appt.status === 'upcoming' && (
+                <>
+                  <DropdownMenuItem onClick={() => onComplete(appt)}>
+                    <Check className="h-4 w-4 mr-2 text-green-600" />Mark Completed
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onCancel(appt.id)}>
+                    <X className="h-4 w-4 mr-2 text-orange-500" />Cancel
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuItem className="text-destructive" onClick={() => onDelete(appt.id)}>Delete</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </CardContent>
     </Card>
   )

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { addChecklistItem, deleteChecklistItem, toggleCompletion } from '@/app/actions/checklist'
@@ -125,7 +125,7 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
       <div className="flex items-start justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ClipboardCheck className="h-6 w-6 text-blue-600" />
+            <ClipboardCheck className="h-6 w-6 text-teal-600" />
             Daily Checklist
           </h1>
           <p className="text-muted-foreground text-sm mt-1">caring for {recipientName}</p>
@@ -216,7 +216,7 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full rounded-full bg-blue-500 transition-all duration-300"
+              className="h-full rounded-full bg-teal-500 transition-all duration-300"
               style={{ width: `${progressPct}%` }}
             />
           </div>
@@ -259,9 +259,9 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
                     disabled={!isToday}
                     className={`mt-0.5 h-5 w-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                       done
-                        ? 'bg-blue-600 border-blue-600'
+                        ? 'bg-teal-600 border-teal-600'
                         : isToday
-                          ? 'border-gray-300 hover:border-blue-500'
+                          ? 'border-gray-300 hover:border-teal-500'
                           : 'border-gray-200 cursor-default'
                     }`}
                     aria-label={done ? 'Mark incomplete' : 'Mark complete'}

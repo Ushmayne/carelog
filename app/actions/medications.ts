@@ -31,6 +31,7 @@ export async function createMedication(careGroupId: string, formData: {
   frequency: string
   instructions?: string
   prescribing_doctor?: string
+  scheduled_times?: string[]
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
