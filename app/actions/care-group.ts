@@ -187,6 +187,42 @@ export async function approveGroupMember(memberId: string) {
   revalidatePath('/family')
 }
 
+export async function updateCareRecipient(careGroupId: string, data: {
+  name: string
+  date_of_birth?: string
+  emergency_contact?: string
+  emergency_contact_phone?: string
+  allergies?: string[]
+  medical_conditions?: string[]
+  doctor_name?: string
+  doctor_phone?: string
+  notes?: string
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const admin = createAdminClient()
+
+  const { data: caller } = await admin
+    .from('group_members')
+    .select('role')
+    .eq('care_group_id', careGroupId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (caller?.role !== 'admin') throw new Error('Only admins can edit care recipient details')
+
+  const { error } = await admin
+    .from('care_recipients')
+    .update(data)
+    .eq('care_group_id', careGroupId)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/family')
+}
+
 export async function removeGroupMember(memberId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

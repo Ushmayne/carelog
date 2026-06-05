@@ -86,6 +86,7 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
   const [newRecipientName, setNewRecipientName] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
   const [inviteCode, setInviteCode] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -118,6 +119,7 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
       setGroupName('')
       setNewRecipientName('')
       setDateOfBirth('')
+      setTermsAccepted(false)
       router.refresh()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to create group')
@@ -350,7 +352,22 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
                     onChange={e => setDateOfBirth(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={formLoading}>
+                <div className="flex items-start gap-2.5 rounded-lg border p-3 bg-muted/30">
+                  <input
+                    id="sidebar-terms"
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={e => setTermsAccepted(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 cursor-pointer accent-teal-600"
+                  />
+                  <label htmlFor="sidebar-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
+                    I agree to the{' '}
+                    <Link href="/tos" target="_blank" className="text-teal-600 hover:underline font-medium">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link href="/privacy" target="_blank" className="text-teal-600 hover:underline font-medium">Privacy Policy</Link>
+                  </label>
+                </div>
+                <Button type="submit" className="w-full" disabled={formLoading || !termsAccepted}>
                   {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   Create Group
                 </Button>

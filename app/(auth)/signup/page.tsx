@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -94,12 +95,28 @@ export default function SignupPage() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <div className="flex items-start gap-2">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={e => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-teal-600 cursor-pointer"
+                  required
+                />
+                <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
+                  I agree to the{' '}
+                  <Link href="/tos" className="text-teal-600 hover:underline" onClick={e => e.stopPropagation()}>Terms of Service</Link>
+                  {' '}and{' '}
+                  <Link href="/privacy" className="text-teal-600 hover:underline" onClick={e => e.stopPropagation()}>Privacy Policy</Link>
+                </label>
+              </div>
+              <Button type="submit" className="w-full" disabled={loading || !termsAccepted}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Create Account
               </Button>
             </form>
-            <p className="text-center text-sm text-muted-foreground mt-4">
+            <p className="text-center text-sm text-muted-foreground mt-3">
               Already have an account?{' '}
               <Link href="/login" className="text-teal-600 hover:underline font-medium">
                 Sign in

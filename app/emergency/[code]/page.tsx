@@ -134,9 +134,20 @@ export default async function EmergencyPage({ params }: Props) {
         )}
 
         {/* Emergency contact */}
-        {recipient?.emergency_contact && (
+        {(recipient?.emergency_contact || recipient?.emergency_contact_phone) && (
           <Section title="Emergency Contact" icon={<Phone className="h-5 w-5 text-orange-600" />} urgent>
-            <p className="text-lg font-semibold mt-1">{recipient.emergency_contact}</p>
+            {recipient.emergency_contact && (
+              <p className="text-lg font-semibold mt-1">{recipient.emergency_contact}</p>
+            )}
+            {recipient.emergency_contact_phone && (
+              <a
+                href={`tel:${recipient.emergency_contact_phone}`}
+                className="flex items-center gap-2 text-blue-600 font-medium mt-1 text-lg"
+              >
+                <Phone className="h-5 w-5" />
+                {recipient.emergency_contact_phone}
+              </a>
+            )}
           </Section>
         )}
 

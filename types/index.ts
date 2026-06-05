@@ -26,6 +26,7 @@ export interface CareRecipient {
   doctor_name?: string
   doctor_phone?: string
   emergency_contact?: string
+  emergency_contact_phone?: string
   notes?: string
   created_at: string
 }

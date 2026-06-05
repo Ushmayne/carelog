@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { createCareGroup, joinCareGroup } from '@/app/actions/care-group'
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Heart, Users, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export function SetupGroup() {
   const router = useRouter()
@@ -19,6 +20,7 @@ export function SetupGroup() {
   const [groupName, setGroupName] = useState('')
   const [recipientName, setRecipientName] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   // Join group form
   const [inviteCode, setInviteCode] = useState('')
@@ -102,7 +104,22 @@ export function SetupGroup() {
                       onChange={e => setDateOfBirth(e.target.value)}
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <div className="flex items-start gap-2.5 rounded-lg border p-3 bg-muted/30">
+                    <input
+                      id="terms"
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={e => setTermsAccepted(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 cursor-pointer accent-teal-600"
+                    />
+                    <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
+                      I agree to the{' '}
+                      <Link href="/tos" target="_blank" className="text-teal-600 hover:underline font-medium">Terms of Service</Link>
+                      {' '}and{' '}
+                      <Link href="/privacy" target="_blank" className="text-teal-600 hover:underline font-medium">Privacy Policy</Link>
+                    </label>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading || !termsAccepted}>
                     {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Create Group
                   </Button>
@@ -135,6 +152,12 @@ export function SetupGroup() {
                     {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Join Group
                   </Button>
+                  <p className="text-center text-xs text-muted-foreground leading-relaxed">
+                    By continuing you agree to our{' '}
+                    <Link href="/tos" target="_blank" className="text-teal-600 hover:underline">Terms of Service</Link>
+                    {' '}and{' '}
+                    <Link href="/privacy" target="_blank" className="text-teal-600 hover:underline">Privacy Policy</Link>.
+                  </p>
                 </form>
               </CardContent>
             </Card>

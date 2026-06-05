@@ -3,12 +3,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Users, Copy, Check, Crown, UserX, UserCheck, Clock } from 'lucide-react'
+import { Users, Copy, Check, Crown, UserX, UserCheck, Clock, Pencil, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
-import { approveGroupMember, removeGroupMember } from '@/app/actions/care-group'
+import { approveGroupMember, removeGroupMember, updateCareRecipient } from '@/app/actions/care-group'
 import type { CareGroup, GroupMember, CareRecipient } from '@/types'
 
 interface Props {
@@ -20,14 +24,51 @@ interface Props {
 }
 
 export function FamilyClient({ group, members, currentUserId, currentUserRole }: Props) {
-  const [copied, setCopied] = useState(false)
-  const [actionInProgress, setActionInProgress] = useState<string | null>(null)
-
   const rawRecipient = Array.isArray(group.care_recipient) ? group.care_recipient[0] : group.care_recipient
   const recipient = rawRecipient as CareRecipient | undefined
 
+  const [copied, setCopied] = useState(false)
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  const [editName, setEditName] = useState(recipient?.name ?? '')
+  const [editDob, setEditDob] = useState(recipient?.date_of_birth ?? '')
+  const [editEmergencyContact, setEditEmergencyContact] = useState(recipient?.emergency_contact ?? '')
+  const [editEmergencyPhone, setEditEmergencyPhone] = useState(recipient?.emergency_contact_phone ?? '')
+  const [editAllergies, setEditAllergies] = useState(recipient?.allergies?.join(', ') ?? '')
+  const [editConditions, setEditConditions] = useState(recipient?.medical_conditions?.join(', ') ?? '')
+  const [editDoctorName, setEditDoctorName] = useState(recipient?.doctor_name ?? '')
+  const [editDoctorPhone, setEditDoctorPhone] = useState(recipient?.doctor_phone ?? '')
+  const [editNotes, setEditNotes] = useState(recipient?.notes ?? '')
+
   const approvedMembers = members.filter(m => m.status === 'approved')
   const pendingMembers = members.filter(m => m.status === 'pending')
+
+  async function handleSaveRecipient(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editName.trim()) { toast.error('Name is required'); return }
+    setSaving(true)
+    try {
+      await updateCareRecipient(group.id, {
+        name: editName.trim(),
+        date_of_birth: editDob || undefined,
+        emergency_contact: editEmergencyContact.trim() || undefined,
+        emergency_contact_phone: editEmergencyPhone.trim() || undefined,
+        allergies: editAllergies ? editAllergies.split(',').map(s => s.trim()).filter(Boolean) : [],
+        medical_conditions: editConditions ? editConditions.split(',').map(s => s.trim()).filter(Boolean) : [],
+        doctor_name: editDoctorName.trim() || undefined,
+        doctor_phone: editDoctorPhone.trim() || undefined,
+        notes: editNotes.trim() || undefined,
+      })
+      toast.success('Care recipient updated')
+      setEditOpen(false)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   async function copyCode() {
     await navigator.clipboard.writeText(group.invite_code)
@@ -206,63 +247,166 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
 
         {/* Care recipient info */}
         <div className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Care Recipient</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recipient ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-purple-100 text-purple-700 text-lg font-semibold">
-                        {getInitials(recipient.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-semibold">{recipient.name}</div>
-                      {recipient.date_of_birth && (
-                        <div className="text-xs text-muted-foreground">
-                          Born {format(parseISO(recipient.date_of_birth), 'MMMM d, yyyy')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {recipient.doctor_name && (
-                    <div>
-                      <div className="text-xs text-muted-foreground font-medium mb-1">Primary Doctor</div>
-                      <div className="text-sm">{recipient.doctor_name}</div>
-                    </div>
-                  )}
-
-                  {recipient.medical_conditions && recipient.medical_conditions.length > 0 && (
-                    <div>
-                      <div className="text-xs text-muted-foreground font-medium mb-1">Conditions</div>
-                      <div className="flex flex-wrap gap-1">
-                        {recipient.medical_conditions.map((c: string) => (
-                          <Badge key={c} variant="secondary" className="text-xs">{c}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {recipient.allergies && recipient.allergies.length > 0 && (
-                    <div>
-                      <div className="text-xs text-muted-foreground font-medium mb-1">Allergies</div>
-                      <div className="flex flex-wrap gap-1">
-                        {recipient.allergies.map((a: string) => (
-                          <Badge key={a} variant="destructive" className="text-xs">{a}</Badge>
-                        ))}
-                      </div>
-                    </div>
+          <Dialog open={editOpen} onOpenChange={setEditOpen}>
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base">Care Recipient</CardTitle>
+                  {currentUserRole === 'admin' && recipient && (
+                    <DialogTrigger render={<Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" />}>
+                      <Pencil className="h-3 w-3" />
+                      Edit
+                    </DialogTrigger>
                   )}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No care recipient set up yet.</p>
-              )}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                {recipient ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback className="bg-purple-100 text-purple-700 text-lg font-semibold">
+                          {getInitials(recipient.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-semibold">{recipient.name}</div>
+                        {recipient.date_of_birth && (
+                          <div className="text-xs text-muted-foreground">
+                            Born {format(parseISO(recipient.date_of_birth), 'MMMM d, yyyy')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {(recipient.emergency_contact || recipient.emergency_contact_phone) && (
+                      <div>
+                        <div className="text-xs text-muted-foreground font-medium mb-1">Emergency Contact</div>
+                        {recipient.emergency_contact && (
+                          <div className="text-sm font-medium">{recipient.emergency_contact}</div>
+                        )}
+                        {recipient.emergency_contact_phone && (
+                          <a href={`tel:${recipient.emergency_contact_phone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline mt-0.5">
+                            <Phone className="h-3.5 w-3.5" />
+                            {recipient.emergency_contact_phone}
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {recipient.doctor_name && (
+                      <div>
+                        <div className="text-xs text-muted-foreground font-medium mb-1">Primary Doctor</div>
+                        <div className="text-sm">{recipient.doctor_name}</div>
+                        {recipient.doctor_phone && (
+                          <a href={`tel:${recipient.doctor_phone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline mt-0.5">
+                            <Phone className="h-3.5 w-3.5" />
+                            {recipient.doctor_phone}
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {recipient.medical_conditions && recipient.medical_conditions.length > 0 && (
+                      <div>
+                        <div className="text-xs text-muted-foreground font-medium mb-1">Conditions</div>
+                        <div className="flex flex-wrap gap-1">
+                          {recipient.medical_conditions.map((c: string) => (
+                            <Badge key={c} variant="secondary" className="text-xs">{c}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {recipient.allergies && recipient.allergies.length > 0 && (
+                      <div>
+                        <div className="text-xs text-muted-foreground font-medium mb-1">Allergies</div>
+                        <div className="flex flex-wrap gap-1">
+                          {recipient.allergies.map((a: string) => (
+                            <Badge key={a} variant="destructive" className="text-xs">{a}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {recipient.notes && (
+                      <div>
+                        <div className="text-xs text-muted-foreground font-medium mb-1">Notes</div>
+                        <div className="text-sm text-muted-foreground">{recipient.notes}</div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No care recipient set up yet.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Edit Care Recipient</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSaveRecipient} className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5 col-span-2">
+                    <Label>Name</Label>
+                    <Input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Full name" required />
+                  </div>
+                  <div className="space-y-1.5 col-span-2">
+                    <Label>Date of Birth</Label>
+                    <Input type="date" value={editDob} onChange={e => setEditDob(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Emergency Contact</p>
+                  <div className="space-y-1.5">
+                    <Label>Contact Name</Label>
+                    <Input value={editEmergencyContact} onChange={e => setEditEmergencyContact(e.target.value)} placeholder="e.g. Jane Johnson (daughter)" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Contact Phone</Label>
+                    <Input type="tel" value={editEmergencyPhone} onChange={e => setEditEmergencyPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Medical Info</p>
+                  <div className="space-y-1.5">
+                    <Label>Allergies <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+                    <Input value={editAllergies} onChange={e => setEditAllergies(e.target.value)} placeholder="e.g. Penicillin, Peanuts" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Medical Conditions <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+                    <Input value={editConditions} onChange={e => setEditConditions(e.target.value)} placeholder="e.g. Diabetes, Hypertension" />
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Primary Doctor</p>
+                  <div className="space-y-1.5">
+                    <Label>Doctor Name</Label>
+                    <Input value={editDoctorName} onChange={e => setEditDoctorName(e.target.value)} placeholder="Dr. Smith" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Doctor Phone</Label>
+                    <Input type="tel" value={editDoctorPhone} onChange={e => setEditDoctorPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
+                  </div>
+                </div>
+
+                <div className="border-t pt-4 space-y-1.5">
+                  <Label>Additional Notes</Label>
+                  <Textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} placeholder="Any other important information..." />
+                </div>
+
+                <DialogFooter>
+                  <Button type="submit" disabled={saving}>
+                    {saving ? 'Saving...' : 'Save changes'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           <Card>
             <CardHeader className="pb-3">

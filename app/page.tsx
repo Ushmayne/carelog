@@ -126,7 +126,11 @@ export default function LandingPage() {
             </div>
             <span className="text-sm font-medium text-foreground">CareLog</span>
           </div>
-          <p className="text-xs text-muted-foreground">Helping families care together.</p>
+          <div className="flex items-center gap-4 flex-wrap">
+            <p className="text-xs text-muted-foreground">Helping families care together.</p>
+            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link href="/tos" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+          </div>
         </div>
       </footer>
     </div>
