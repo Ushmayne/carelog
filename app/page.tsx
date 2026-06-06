@@ -27,9 +27,9 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="flex-1 flex items-center justify-center bg-gradient-to-br from-teal-50/60 via-white to-emerald-50/30 px-6 py-24">
+      <section className="flex-1 flex items-center justify-center bg-gradient-to-br from-teal-50/60 via-white to-emerald-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 px-6 py-24">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
             <Shield className="h-3.5 w-3.5" />
             Built for families
           </div>
@@ -147,7 +147,7 @@ function FeatureCard({
 }) {
   return (
     <div className="flex flex-col gap-4 p-6 rounded-2xl border border-border bg-card hover:shadow-md transition-shadow">
-      <div className={`${bg} rounded-xl p-3 h-fit w-fit`}>{icon}</div>
+      <div className={`${bg} dark:bg-white/5 rounded-xl p-3 h-fit w-fit`}>{icon}</div>
       <div>
         <h3 className="font-semibold text-foreground mb-1.5">{title}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>

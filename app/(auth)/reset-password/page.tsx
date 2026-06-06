@@ -1,8 +1,7 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,18 +10,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Heart, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
 
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+    if (password !== confirm) {
+      toast.error('Passwords do not match')
+      return
+    }
+
+    setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
       toast.error(error.message)
@@ -30,6 +38,7 @@ export default function LoginPage() {
       return
     }
 
+    toast.success('Password updated! Signing you in...')
     router.push('/dashboard')
     router.refresh()
   }
@@ -46,49 +55,38 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">Welcome back</CardTitle>
-            <CardDescription>Sign in to your family care hub</CardDescription>
+            <CardTitle className="text-xl">Set a new password</CardTitle>
+            <CardDescription>Choose a strong password for your account</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link href="/forgot-password" className="text-xs text-teal-600 hover:underline">
-                    Forgot password?
-                  </Link>
-                </div>
+                <Label htmlFor="password">New Password</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="At least 6 characters"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm">Confirm Password</Label>
+                <Input
+                  id="confirm"
+                  type="password"
+                  placeholder="Repeat your new password"
+                  value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  required
+                />
+              </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Sign In
+                Update password
               </Button>
             </form>
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="text-teal-600 hover:underline font-medium">
-                Sign up
-              </Link>
-            </p>
           </CardContent>
         </Card>
       </div>

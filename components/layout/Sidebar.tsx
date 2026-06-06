@@ -46,6 +46,7 @@ import {
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { setActiveGroup, createCareGroup, joinCareGroup } from '@/app/actions/care-group'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -154,7 +155,7 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
             className={cn(
               'relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
               pathname === href
-                ? 'bg-teal-100 text-teal-700'
+                ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300'
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground'
             )}
           >
@@ -219,9 +220,9 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
         )}
 
         {recipientName && (
-          <div className="mt-2 px-2 py-1.5 bg-teal-50 rounded-lg">
+          <div className="mt-2 px-2 py-1.5 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
             <div className="text-xs text-muted-foreground">Caring for</div>
-            <div className="text-sm font-medium text-teal-800">{recipientName}</div>
+            <div className="text-sm font-medium text-teal-800 dark:text-teal-200">{recipientName}</div>
           </div>
         )}
       </div>
@@ -237,7 +238,7 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
           className={cn(
             'relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
             pathname === '/profile'
-              ? 'bg-teal-100 text-teal-700'
+              ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300'
               : 'text-muted-foreground hover:bg-accent hover:text-foreground'
           )}
         >
@@ -247,6 +248,7 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
           <UserCircle className="h-4 w-4 flex-shrink-0" />
           Profile
         </Link>
+        <ThemeToggle />
         <Button
           variant="ghost"
           size="sm"

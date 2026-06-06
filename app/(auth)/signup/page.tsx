@@ -46,13 +46,13 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100/40 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100/40 dark:from-gray-900 dark:to-gray-800 px-4">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="bg-teal-600 rounded-xl p-2">
             <Heart className="h-6 w-6 text-white" />
           </div>
-          <span className="text-2xl font-bold text-gray-900">CareLog</span>
+          <span className="text-2xl font-bold text-gray-900 dark:text-white">CareLog</span>
         </div>
 
         <Card>
