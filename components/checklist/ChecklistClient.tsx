@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ClipboardCheck, Plus, Trash2, Loader2, Check, ChevronLeft, ChevronRight, User, CalendarIcon } from 'lucide-react'
+import { ClipboardCheck, Plus, Trash2, Loader2, Check, ChevronLeft, ChevronRight, User, CalendarIcon, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { useRouter } from 'next/navigation'
@@ -67,7 +67,6 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
   }
 
   async function handleToggle(itemId: string) {
-    if (!isToday) return
     const wasComplete = completedIds.has(itemId)
     setCompletedIds(prev => {
       const next = new Set(prev)
@@ -75,7 +74,7 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
       return next
     })
     try {
-      await toggleCompletion(itemId, careGroupId, !wasComplete)
+      await toggleCompletion(itemId, careGroupId, !wasComplete, selectedDate)
       router.refresh()
     } catch {
       setCompletedIds(prev => {
@@ -223,6 +222,14 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
         </div>
       )}
 
+      {/* Past-date notice */}
+      {!isToday && items.length > 0 && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 mb-4">
+          <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+          Viewing a past date — you can still check or uncheck items to correct the record.
+        </div>
+      )}
+
       {/* Items */}
       {items.length === 0 ? (
         <Card>
@@ -256,13 +263,10 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
                 <CardContent className="py-3 px-4 flex items-start gap-3">
                   <button
                     onClick={() => handleToggle(item.id)}
-                    disabled={!isToday}
                     className={`mt-0.5 h-5 w-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                       done
                         ? 'bg-teal-600 border-teal-600'
-                        : isToday
-                          ? 'border-gray-300 hover:border-teal-500'
-                          : 'border-gray-200 cursor-default'
+                        : 'border-gray-300 hover:border-teal-500'
                     }`}
                     aria-label={done ? 'Mark incomplete' : 'Mark complete'}
                   >

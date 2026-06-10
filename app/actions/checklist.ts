@@ -82,21 +82,15 @@ export async function deleteChecklistItem(itemId: string) {
   revalidatePath('/checklist')
 }
 
-export async function toggleCompletion(itemId: string, careGroupId: string, complete: boolean) {
+export async function toggleCompletion(itemId: string, careGroupId: string, complete: boolean, targetDate?: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
   const admin = createAdminClient()
-  const date = today()
+  const date = targetDate ?? today()
 
   if (complete) {
-    await admin
-      .from('checklist_completions')
-      .delete()
-      .eq('checklist_item_id', itemId)
-      .neq('completed_date', date)
-
     const { error } = await admin.from('checklist_completions').insert({
       checklist_item_id: itemId,
       care_group_id: careGroupId,

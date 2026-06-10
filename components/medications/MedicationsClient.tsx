@@ -195,7 +195,7 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Date & Time</Label>
+                  <Label>Administered at <span className="text-muted-foreground font-normal">(change for late logging)</span></Label>
                   <Input type="datetime-local" value={administeredAt} onChange={e => setAdministeredAt(e.target.value)} />
                 </div>
                 <div className="flex items-center gap-2">

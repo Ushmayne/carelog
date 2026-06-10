@@ -148,7 +148,7 @@ export function VitalsClient({ careGroupId, vitals }: Props) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Date & Time</Label>
+                <Label>Recorded at <span className="text-muted-foreground font-normal">(change for late logging)</span></Label>
                 <Input type="datetime-local" value={recordedAt} onChange={e => setRecordedAt(e.target.value)} required />
               </div>
               <div className="space-y-2">

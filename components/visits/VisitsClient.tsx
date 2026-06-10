@@ -87,7 +87,7 @@ export function VisitsClient({ careGroupId, visits }: Props) {
             <form onSubmit={handleCreate} className="space-y-4 mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Visit Date</Label>
+                  <Label>Visit Date <span className="text-muted-foreground font-normal">(change for late logging)</span></Label>
                   <Input type="date" value={visitDate} onChange={e => setVisitDate(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
