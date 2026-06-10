@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { getUserCareGroup } from '@/app/actions/care-group'
 import { getMedications, getMedicationLogs } from '@/app/actions/medications'
 import { redirect } from 'next/navigation'
 import { MedicationsClient } from '@/components/medications/MedicationsClient'
+
+export const metadata: Metadata = { title: 'Medications' }
 
 export default async function MedicationsPage() {
   const group = await getUserCareGroup()

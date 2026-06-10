@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { visitNoteSchema, parseOrThrow } from '@/lib/validations'
 
 export async function getVisitNotes(careGroupId: string) {
   const supabase = await createClient()
@@ -23,8 +24,10 @@ export async function createVisitNote(careGroupId: string, formData: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const validated = parseOrThrow(visitNoteSchema, formData)
+
   const { error } = await supabase.from('visit_notes').insert({
-    ...formData,
+    ...validated,
     care_group_id: careGroupId,
     visited_by: user.id,
   })

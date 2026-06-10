@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { VitalReading } from '@/types'
+import { vitalSchema, parseOrThrow } from '@/lib/validations'
 
 export async function getVitals(careGroupId: string): Promise<VitalReading[]> {
   const supabase = await createClient()
@@ -47,8 +48,10 @@ export async function addVital(careGroupId: string, formData: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const validated = parseOrThrow(vitalSchema, formData)
+
   const { error } = await supabase.from('vital_readings').insert({
-    ...formData,
+    ...validated,
     care_group_id: careGroupId,
     recorded_by: user.id,
   })

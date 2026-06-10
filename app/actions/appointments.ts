@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { appointmentSchema, parseOrThrow } from '@/lib/validations'
 
 export async function getAppointments(careGroupId: string) {
   const supabase = await createClient()
@@ -24,8 +25,10 @@ export async function createAppointment(careGroupId: string, formData: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const validated = parseOrThrow(appointmentSchema, formData)
+
   const { error } = await supabase.from('appointments').insert({
-    ...formData,
+    ...validated,
     care_group_id: careGroupId,
     created_by: user.id,
     status: 'upcoming',

@@ -1,8 +1,49 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { format, parseISO } from 'date-fns'
 import type { ActivityItem } from '@/types'
+
+interface MedLogRow {
+  id: string
+  skipped: boolean
+  administered_at: string
+  notes: string | null
+  skip_reason: string | null
+  medication: { name: string } | null
+  profile: { full_name: string | null } | null
+}
+
+interface VisitRow {
+  id: string
+  visit_date: string
+  notes: string
+  visitor: { full_name: string | null } | null
+}
+
+interface TaskRow {
+  id: string
+  title: string
+  completed_at: string | null
+  assignee: { full_name: string | null } | null
+}
+
+interface AppointmentRow {
+  id: string
+  title: string
+  status: string
+  appointment_date: string
+  outcome: string | null
+  creator: { full_name: string | null } | null
+}
+
+interface VitalRow {
+  id: string
+  type: string
+  value: string
+  unit: string
+  recorded_at: string
+  recorder: { full_name: string | null } | null
+}
 
 export async function getActivityFeed(careGroupId: string, limit = 50): Promise<ActivityItem[]> {
   const supabase = await createClient()
@@ -45,71 +86,66 @@ export async function getActivityFeed(careGroupId: string, limit = 50): Promise<
 
   const items: ActivityItem[] = []
 
-  for (const log of (logsRes.data ?? [])) {
-    const med = (log as any).medication
-    const profile = (log as any).profile
+  for (const log of (logsRes.data ?? []) as unknown as MedLogRow[]) {
     items.push({
       id: log.id,
       type: log.skipped ? 'medication_skipped' : 'medication_given',
       title: log.skipped
-        ? `${med?.name ?? 'Medication'} dose skipped`
-        : `${med?.name ?? 'Medication'} dose given`,
+        ? `${log.medication?.name ?? 'Medication'} dose skipped`
+        : `${log.medication?.name ?? 'Medication'} dose given`,
       subtitle: [
-        profile?.full_name,
+        log.profile?.full_name,
         log.skip_reason ? `Reason: ${log.skip_reason}` : log.notes,
       ].filter(Boolean).join(' · '),
       timestamp: log.administered_at,
     })
   }
 
-  for (const visit of (visitsRes.data ?? [])) {
-    const visitor = (visit as any).visitor
+  for (const visit of (visitsRes.data ?? []) as unknown as VisitRow[]) {
     items.push({
       id: visit.id,
       type: 'visit',
-      title: `${visitor?.full_name ?? 'Someone'} logged a visit`,
+      title: `${visit.visitor?.full_name ?? 'Someone'} logged a visit`,
       subtitle: visit.notes.length > 80 ? visit.notes.slice(0, 80) + '…' : visit.notes,
       timestamp: visit.visit_date,
     })
   }
 
-  for (const task of (tasksRes.data ?? [])) {
-    const assignee = (task as any).assignee
+  for (const task of (tasksRes.data ?? []) as unknown as TaskRow[]) {
     items.push({
       id: task.id,
       type: 'task_completed',
       title: `Task completed: ${task.title}`,
-      subtitle: assignee?.full_name ?? '',
+      subtitle: task.assignee?.full_name ?? '',
       timestamp: task.completed_at!,
     })
   }
 
-  for (const appt of (apptsRes.data ?? [])) {
-    const creator = (appt as any).creator
+  for (const appt of (apptsRes.data ?? []) as unknown as AppointmentRow[]) {
     items.push({
       id: appt.id,
       type: 'appointment_completed',
       title: `Appointment completed: ${appt.title}`,
-      subtitle: [creator?.full_name, appt.outcome].filter(Boolean).join(' · '),
+      subtitle: [appt.creator?.full_name, appt.outcome].filter(Boolean).join(' · '),
       timestamp: appt.appointment_date,
     })
   }
 
-  for (const vital of (vitalsRes.data ?? [])) {
-    const recorder = (vital as any).recorder
-    const labelMap: Record<string, string> = {
-      blood_pressure: 'Blood pressure',
-      heart_rate: 'Heart rate',
-      weight: 'Weight',
-      blood_sugar: 'Blood sugar',
-      temperature: 'Temperature',
-      oxygen_saturation: 'O₂ saturation',
-    }
+  const labelMap: Record<string, string> = {
+    blood_pressure: 'Blood pressure',
+    heart_rate: 'Heart rate',
+    weight: 'Weight',
+    blood_sugar: 'Blood sugar',
+    temperature: 'Temperature',
+    oxygen_saturation: 'O₂ saturation',
+  }
+
+  for (const vital of (vitalsRes.data ?? []) as unknown as VitalRow[]) {
     items.push({
       id: vital.id,
       type: 'vital_recorded',
       title: `${labelMap[vital.type] ?? vital.type}: ${vital.value} ${vital.unit}`,
-      subtitle: recorder?.full_name ?? '',
+      subtitle: vital.recorder?.full_name ?? '',
       timestamp: vital.recorded_at,
     })
   }

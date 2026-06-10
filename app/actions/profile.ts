@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { profileSchema, parseOrThrow } from '@/lib/validations'
 
 export async function getProfile() {
   const supabase = await createClient()
@@ -23,10 +24,12 @@ export async function updateProfile({ fullName, phoneNumber }: { fullName: strin
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const { fullName: validatedName, phoneNumber: validatedPhone } = parseOrThrow(profileSchema, { fullName, phoneNumber })
+
   const admin = createAdminClient()
   const { error } = await admin
     .from('profiles')
-    .update({ full_name: fullName, phone_number: phoneNumber ?? null })
+    .update({ full_name: validatedName, phone_number: validatedPhone ?? null })
     .eq('id', user.id)
 
   if (error) throw new Error(error.message)
@@ -37,6 +40,8 @@ export async function updateAvatar(avatarUrl: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
+
+  if (!avatarUrl.startsWith('https://')) throw new Error('Invalid avatar URL')
 
   const admin = createAdminClient()
   const { error } = await admin

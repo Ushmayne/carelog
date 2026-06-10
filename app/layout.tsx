@@ -10,9 +10,17 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "CareLog — Family Care Coordination",
+  title: {
+    default: "CareLog — Family Care Coordination",
+    template: "%s | CareLog",
+  },
   description: "Centralized hub for families managing care for an aging parent",
   icons: { icon: "/favicon.svg" },
+  openGraph: {
+    title: "CareLog — Family Care Coordination",
+    description: "Centralized hub for families managing care for an aging parent",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

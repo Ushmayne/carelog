@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { CareDocument } from '@/types'
+import { documentSchema, parseOrThrow } from '@/lib/validations'
 
 export async function getDocuments(careGroupId: string): Promise<CareDocument[]> {
   const supabase = await createClient()
@@ -27,8 +28,10 @@ export async function createDocument(careGroupId: string, formData: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const validated = parseOrThrow(documentSchema, formData)
+
   const { error } = await supabase.from('documents').insert({
-    ...formData,
+    ...validated,
     care_group_id: careGroupId,
     uploaded_by: user.id,
   })
@@ -42,7 +45,7 @@ export async function deleteDocument(id: string, filePath: string) {
   const { error: storageError } = await supabase.storage
     .from('care-documents')
     .remove([filePath])
-  if (storageError) console.warn('Storage delete failed:', storageError.message)
+  if (storageError) throw new Error(`Failed to delete file: ${storageError.message}`)
 
   const { error } = await supabase.from('documents').delete().eq('id', id)
   if (error) throw new Error(error.message)

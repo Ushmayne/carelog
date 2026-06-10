@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { addDays, addWeeks, addMonths, parseISO, format } from 'date-fns'
+import { taskSchema, parseOrThrow } from '@/lib/validations'
 
 export async function getTasks(careGroupId: string) {
   const supabase = await createClient()
@@ -27,8 +28,10 @@ export async function createTask(careGroupId: string, formData: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const validated = parseOrThrow(taskSchema, formData)
+
   const { error } = await supabase.from('tasks').insert({
-    ...formData,
+    ...validated,
     care_group_id: careGroupId,
     created_by: user.id,
     status: 'pending',
@@ -54,7 +57,6 @@ export async function updateTaskStatus(id: string, status: 'pending' | 'in_progr
   const { error } = await supabase.from('tasks').update(updates).eq('id', id)
   if (error) throw new Error(error.message)
 
-  // Spawn next recurring instance when completed
   if (status === 'completed' && task.recurrence) {
     const baseDate = task.due_date ? parseISO(task.due_date) : new Date()
     let nextDate: Date

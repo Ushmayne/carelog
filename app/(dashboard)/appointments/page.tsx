@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { getUserCareGroup } from '@/app/actions/care-group'
 import { getAppointments } from '@/app/actions/appointments'
 import { redirect } from 'next/navigation'
 import { AppointmentsClient } from '@/components/appointments/AppointmentsClient'
+
+export const metadata: Metadata = { title: 'Appointments' }
 
 export default async function AppointmentsPage() {
   const group = await getUserCareGroup()

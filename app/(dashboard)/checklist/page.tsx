@@ -1,8 +1,11 @@
+import type { Metadata } from 'next'
 import { getUserCareGroup } from '@/app/actions/care-group'
 import { getChecklistItems, getCompletionsForDate } from '@/app/actions/checklist'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { ChecklistClient } from '@/components/checklist/ChecklistClient'
+
+export const metadata: Metadata = { title: 'Daily Checklist' }
 
 type PageProps = {
   searchParams: Promise<{ date?: string }>

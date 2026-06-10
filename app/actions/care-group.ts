@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import { careGroupSchema, parseOrThrow } from '@/lib/validations'
 
 const ACTIVE_GROUP_COOKIE = 'active_care_group_id'
 
@@ -22,11 +23,14 @@ export async function createCareGroup(name: string, recipientName: string, dateO
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const { name: validatedName, recipientName: validatedRecipient, dateOfBirth: validatedDob } =
+    parseOrThrow(careGroupSchema, { name, recipientName, dateOfBirth })
+
   const admin = createAdminClient()
 
   const { data: group, error: groupError } = await admin
     .from('care_groups')
-    .insert({ name, created_by: user.id })
+    .insert({ name: validatedName, created_by: user.id })
     .select()
     .single()
 
@@ -34,7 +38,7 @@ export async function createCareGroup(name: string, recipientName: string, dateO
 
   await Promise.all([
     admin.from('group_members').insert({ care_group_id: group.id, user_id: user.id, role: 'admin', status: 'approved' }),
-    admin.from('care_recipients').insert({ care_group_id: group.id, name: recipientName, date_of_birth: dateOfBirth || null }),
+    admin.from('care_recipients').insert({ care_group_id: group.id, name: validatedRecipient, date_of_birth: validatedDob || null }),
   ])
 
   await persistActiveGroup(group.id)

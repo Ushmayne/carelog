@@ -66,6 +66,25 @@ export function DocumentsClient({ careGroupId, documents }: Props) {
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedFile) return
+
+    const MAX_DOC_SIZE = 20 * 1024 * 1024 // 20 MB
+    if (selectedFile.size > MAX_DOC_SIZE) {
+      toast.error('File must be smaller than 20 MB')
+      return
+    }
+
+    const ALLOWED_DOC_TYPES = [
+      'application/pdf',
+      'image/jpeg', 'image/png',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+    ]
+    if (!ALLOWED_DOC_TYPES.includes(selectedFile.type)) {
+      toast.error('Only PDF, images, Word documents, and text files are allowed')
+      return
+    }
+
     setUploading(true)
     try {
       const supabase = createClient()

@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { medicationSchema, logMedicationSchema, parseOrThrow } from '@/lib/validations'
 
 export async function getMedications(careGroupId: string) {
   const supabase = await createClient()
@@ -37,8 +38,10 @@ export async function createMedication(careGroupId: string, formData: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const validated = parseOrThrow(medicationSchema, formData)
+
   const { error } = await supabase.from('medications').insert({
-    ...formData,
+    ...validated,
     care_group_id: careGroupId,
     created_by: user.id,
   })
@@ -72,8 +75,10 @@ export async function logMedication(careGroupId: string, formData: {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const validated = parseOrThrow(logMedicationSchema, formData)
+
   const { error } = await supabase.from('medication_logs').insert({
-    ...formData,
+    ...validated,
     care_group_id: careGroupId,
     administered_by: user.id,
   })

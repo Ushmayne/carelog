@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { getUserCareGroup } from '@/app/actions/care-group'
 import { getVitals } from '@/app/actions/vitals'
 import { redirect } from 'next/navigation'
 import { VitalsClient } from '@/components/vitals/VitalsClient'
+
+export const metadata: Metadata = { title: 'Vitals' }
 
 export default async function VitalsPage() {
   const group = await getUserCareGroup()
