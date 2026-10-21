@@ -4,8 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { careGroupSchema, parseOrThrow } from '@/lib/validations'
-
-const ACTIVE_GROUP_COOKIE = 'active_care_group_id'
+import { ACTIVE_GROUP_COOKIE, getActiveCareGroup, getApprovedCareGroups } from '@/lib/auth'
 
 async function persistActiveGroup(groupId: string) {
   const cookieStore = await cookies()
@@ -77,60 +76,11 @@ export async function joinCareGroup(inviteCode: string) {
 }
 
 export async function getUserCareGroups() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const admin = createAdminClient()
-  const { data: memberships } = await admin
-    .from('group_members')
-    .select('care_group_id')
-    .eq('user_id', user.id)
-    .eq('status', 'approved')
-    .order('joined_at', { ascending: true })
-
-  if (!memberships?.length) return []
-
-  const { data: groups } = await admin
-    .from('care_groups')
-    .select('*, care_recipient:care_recipients(*)')
-    .in('id', memberships.map(m => m.care_group_id))
-
-  if (!groups) return []
-
-  // Preserve membership join order
-  const order = memberships.map(m => m.care_group_id)
-  return groups.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+  return getApprovedCareGroups()
 }
 
 export async function getUserCareGroup() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const admin = createAdminClient()
-
-  const { data: memberships } = await admin
-    .from('group_members')
-    .select('care_group_id')
-    .eq('user_id', user.id)
-    .eq('status', 'approved')
-    .order('joined_at', { ascending: true })
-
-  if (!memberships?.length) return null
-
-  const validIds = memberships.map(m => m.care_group_id)
-  const cookieStore = await cookies()
-  const cookieGroupId = cookieStore.get(ACTIVE_GROUP_COOKIE)?.value
-  const activeGroupId = validIds.includes(cookieGroupId ?? '') ? cookieGroupId! : validIds[0]
-
-  const { data: group } = await admin
-    .from('care_groups')
-    .select('*, care_recipient:care_recipients(*)')
-    .eq('id', activeGroupId)
-    .single()
-
-  return group
+  return getActiveCareGroup()
 }
 
 export async function getGroupMembers(careGroupId: string) {

@@ -46,9 +46,15 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <BrandMark className="size-9" />
-          <span className="text-2xl font-semibold tracking-[-0.02em] text-foreground">CareLog</span>
+        <div className="flex justify-center mb-8">
+          <Link
+            href="/"
+            aria-label="CareLog home"
+            className="flex items-center gap-2 rounded-lg outline-none transition-opacity hover:opacity-80 focus-visible:ring-3 focus-visible:ring-ring/50"
+          >
+            <BrandMark className="size-9" />
+            <span className="text-2xl font-semibold tracking-[-0.02em] text-foreground">CareLog</span>
+          </Link>
         </div>
 
         <Card>

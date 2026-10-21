@@ -110,7 +110,7 @@ export default function SignupPage() {
                   <Link href="/privacy" className="text-primary hover:underline" onClick={e => e.stopPropagation()}>Privacy Policy</Link>
                 </label>
               </div>
-              <Button type="submit" className="w-full" disabled={loading || !termsAccepted}>
+              <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                 Create account
               </Button>

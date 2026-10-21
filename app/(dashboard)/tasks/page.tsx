@@ -2,14 +2,13 @@ import type { Metadata } from 'next'
 import { getUserCareGroup, getGroupMembers } from '@/app/actions/care-group'
 import { getTasks } from '@/app/actions/tasks'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 import { TasksClient } from '@/components/tasks/TasksClient'
 
 export const metadata: Metadata = { title: 'Tasks' }
 
 export default async function TasksPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   const group = await getUserCareGroup()
   if (!group) redirect('/dashboard')

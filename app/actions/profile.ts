@@ -3,20 +3,10 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { profileSchema, parseOrThrow } from '@/lib/validations'
+import { getCurrentProfile } from '@/lib/auth'
 
 export async function getProfile() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const admin = createAdminClient()
-  const { data } = await admin
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  return data
+  return getCurrentProfile()
 }
 
 export async function updateProfile({ fullName, phoneNumber }: { fullName: string; phoneNumber?: string }) {

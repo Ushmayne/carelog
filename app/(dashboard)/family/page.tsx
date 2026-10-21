@@ -1,14 +1,13 @@
 import type { Metadata } from 'next'
 import { getUserCareGroup, getGroupMembers } from '@/app/actions/care-group'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 import { FamilyClient } from '@/components/family/FamilyClient'
 
 export const metadata: Metadata = { title: 'Family & Care Team' }
 
 export default async function FamilyPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   const group = await getUserCareGroup()
   if (!group) redirect('/dashboard')

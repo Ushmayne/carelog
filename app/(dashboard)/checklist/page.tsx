@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { getUserCareGroup } from '@/app/actions/care-group'
 import { getChecklistItems, getCompletionsForDate } from '@/app/actions/checklist'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 import { ChecklistClient } from '@/components/checklist/ChecklistClient'
 
 export const metadata: Metadata = { title: 'Daily Checklist' }
@@ -21,8 +21,7 @@ export default async function ChecklistPage({ searchParams }: PageProps) {
       : todayStr
   const isToday = selectedDate === todayStr
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   const group = await getUserCareGroup()
   if (!group) redirect('/dashboard')

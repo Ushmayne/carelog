@@ -1,7 +1,7 @@
 ﻿import Link from 'next/link'
 import { format, isAfter, parseISO } from 'date-fns'
 import { MapPin } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/auth'
 import { getUserCareGroup } from '@/app/actions/care-group'
 import { getMedications, getMedicationLogs } from '@/app/actions/medications'
 import { getAppointments } from '@/app/actions/appointments'
@@ -29,8 +29,7 @@ const VITAL_LABELS: Record<VitalReading['type'], string> = {
 const VITAL_ORDER = Object.keys(VITAL_LABELS) as VitalReading['type'][]
 
 export default async function TodayPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
 
   const group = await getUserCareGroup()
   if (!group) return <SetupGroup />
