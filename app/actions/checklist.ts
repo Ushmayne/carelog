@@ -7,8 +7,25 @@ function today() {
   return new Date().toISOString().split('T')[0]
 }
 
+async function assertGroupMember(admin: ReturnType<typeof createAdminClient>, careGroupId: string, userId: string) {
+  const { data } = await admin
+    .from('group_members')
+    .select('id')
+    .eq('care_group_id', careGroupId)
+    .eq('user_id', userId)
+    .eq('status', 'approved')
+    .maybeSingle()
+  if (!data) throw new Error('Not a member of this care group')
+}
+
 export async function getChecklistItems(careGroupId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
   const admin = createAdminClient()
+  await assertGroupMember(admin, careGroupId, user.id)
+
   const { data } = await admin
     .from('checklist_items')
     .select('*')
@@ -19,7 +36,13 @@ export async function getChecklistItems(careGroupId: string) {
 }
 
 export async function getCompletionsForDate(careGroupId: string, date?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
   const admin = createAdminClient()
+  await assertGroupMember(admin, careGroupId, user.id)
+
   const targetDate = date ?? today()
 
   const { data: completions } = await admin
@@ -50,6 +73,8 @@ export async function addChecklistItem(careGroupId: string, title: string, descr
   if (!user) throw new Error('Not authenticated')
 
   const admin = createAdminClient()
+  await assertGroupMember(admin, careGroupId, user.id)
+
   const { data: existing } = await admin
     .from('checklist_items')
     .select('order_index')
@@ -77,6 +102,14 @@ export async function deleteChecklistItem(itemId: string) {
   if (!user) throw new Error('Not authenticated')
 
   const admin = createAdminClient()
+  const { data: item } = await admin
+    .from('checklist_items')
+    .select('care_group_id')
+    .eq('id', itemId)
+    .single()
+  if (!item) throw new Error('Checklist item not found')
+  await assertGroupMember(admin, item.care_group_id, user.id)
+
   const { error } = await admin.from('checklist_items').delete().eq('id', itemId)
   if (error) throw new Error(error.message)
   revalidatePath('/checklist')
@@ -88,6 +121,8 @@ export async function toggleCompletion(itemId: string, careGroupId: string, comp
   if (!user) throw new Error('Not authenticated')
 
   const admin = createAdminClient()
+  await assertGroupMember(admin, careGroupId, user.id)
+
   const date = targetDate ?? today()
 
   if (complete) {

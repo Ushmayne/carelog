@@ -1,157 +1,139 @@
 ﻿import Link from 'next/link'
-import { Heart, Pill, Calendar, ClipboardList, CheckSquare, Users, ArrowRight, Shield } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
+import { BrandMark } from '@/components/layout/BrandMark'
 import { cn } from '@/lib/utils'
+
+const questions = [
+  {
+    q: '“Did Mom take her pills?”',
+    a: 'Every dose is logged with the time and who gave it. A missed one shows up on everyone’s Today screen.',
+  },
+  {
+    q: '“When’s the cardiology appointment?”',
+    a: 'Appointments keep the doctor, the address, the time and the notes in one place the whole family can see.',
+  },
+  {
+    q: '“How was she when you visited?”',
+    a: 'Short visit notes with mood, so a sibling three time zones away still knows how her week went.',
+  },
+  {
+    q: '“What do I tell the paramedics?”',
+    a: 'An emergency card with her medications, allergies and contacts, one tap from any screen.',
+  },
+]
+
+const sampleDoses = [
+  { time: '8:00 AM', name: 'Metformin 500 mg', status: 'Given · Sara', state: 'done' },
+  { time: '8:00 AM', name: 'Lisinopril 10 mg', status: 'Given · Sara', state: 'done' },
+  { time: '12:00 PM', name: 'Vitamin D3', status: 'Not logged', state: 'missed' },
+  { time: '6:00 PM', name: 'Metformin 500 mg', status: 'Due in 2 hr', state: 'later' },
+] as const
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Nav */}
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-teal-600 rounded-xl p-1.5">
-              <Heart className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-foreground">CareLog</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link href="/login" className={cn(buttonVariants({ variant: 'ghost' }))}>
-              Sign In
-            </Link>
-            <Link href="/signup" className={cn(buttonVariants())}>
-              Get Started
-            </Link>
-          </div>
-        </div>
+    <div className="flex min-h-screen flex-col bg-background">
+      <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:rounded-lg focus:bg-card focus:px-4 focus:py-2">
+        Skip to content
+      </a>
+      <header className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 md:px-6">
+        <Link href="/" className="flex items-center gap-2.5">
+          <BrandMark />
+          <span className="text-[17px] font-semibold tracking-[-0.01em]">CareLog</span>
+        </Link>
+        <nav aria-label="Site" className="flex flex-wrap items-center gap-1">
+          <Link href="#how" className="hidden rounded-lg px-3 py-2 text-foreground/75 hover:text-foreground sm:block">How it works</Link>
+          <Link href="/privacy" className="hidden rounded-lg px-3 py-2 text-foreground/75 hover:text-foreground sm:block">Privacy</Link>
+          <Link href="/login" className="rounded-lg px-3 py-2 font-semibold">Sign in</Link>
+          <Link href="/signup" className={cn(buttonVariants(), 'bg-foreground text-background hover:bg-foreground/90')}>
+            Start a care group
+          </Link>
+        </nav>
       </header>
 
-      {/* Hero */}
-      <section className="flex-1 flex items-center justify-center bg-gradient-to-br from-teal-50/60 via-white to-emerald-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 px-6 py-24">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
-            <Shield className="h-3.5 w-3.5" />
-            Built for families
-          </div>
-          <h1 className="text-5xl font-bold text-foreground leading-tight mb-6">
-            Care coordination,{' '}
-            <span className="text-teal-600">simplified</span>
-          </h1>
-          <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-            CareLog keeps your whole family on the same page — medications, appointments, visit notes, and tasks, all in one place.
-          </p>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <Link href="/signup" className={cn(buttonVariants({ size: 'lg' }), 'flex items-center gap-2')}>
-              Get started for free
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link href="/login" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}>
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-20 px-6 bg-card">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-foreground text-center mb-4">Everything your family needs</h2>
-          <p className="text-muted-foreground text-center mb-14 max-w-xl mx-auto">
-            One hub to replace scattered texts, sticky notes, and missed medication reminders.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard
-              icon={<Pill className="h-6 w-6 text-teal-600" />}
-              bg="bg-teal-50"
-              title="Medication Tracking"
-              description="Log every dose, skip, or note. See a full history at a glance so nothing slips through."
-            />
-            <FeatureCard
-              icon={<Calendar className="h-6 w-6 text-emerald-600" />}
-              bg="bg-emerald-50"
-              title="Appointment Management"
-              description="Add upcoming doctor visits, track follow-ups, and keep the whole family informed."
-            />
-            <FeatureCard
-              icon={<ClipboardList className="h-6 w-6 text-purple-600" />}
-              bg="bg-purple-50"
-              title="Visit Notes"
-              description="Record how each visit went — mood, notes, observations — so everyone stays in the loop."
-            />
-            <FeatureCard
-              icon={<CheckSquare className="h-6 w-6 text-orange-600" />}
-              bg="bg-orange-50"
-              title="Shared Task List"
-              description="Assign tasks to family members with due dates and priorities. No more dropped balls."
-            />
-            <FeatureCard
-              icon={<Users className="h-6 w-6 text-pink-600" />}
-              bg="bg-pink-50"
-              title="Family Groups"
-              description="Invite siblings, spouses, and other caregivers with a simple code. Everyone sees the same picture."
-            />
-            <FeatureCard
-              icon={<Heart className="h-6 w-6 text-red-500" />}
-              bg="bg-red-50"
-              title="Care-Centered Design"
-              description="Built specifically for families coordinating care — not a generic task app with a new coat of paint."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 px-6 bg-teal-600">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Ready to get organized?</h2>
-          <p className="text-teal-200 mb-8">
-            Set up your care group in minutes and invite your family today.
-          </p>
-          <Link
-            href="/signup"
-            className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }), 'inline-flex items-center gap-2')}
-          >
-            Create your free account
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border py-6 px-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <div className="bg-teal-600 rounded-lg p-1">
-              <Heart className="h-3.5 w-3.5 text-white" />
+      <main id="content" className="flex-1">
+        <section className="mx-auto flex max-w-6xl flex-wrap items-center gap-14 px-4 pt-10 pb-24 md:px-6 md:pt-16">
+          <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-6">
+            <h1 className="text-[clamp(2.5rem,5.2vw,4rem)] leading-[1.04] font-semibold tracking-[-0.035em]">
+              Everyone looking after Mom, on the same page.
+            </h1>
+            <p className="max-w-[34ch] text-lg text-foreground/80 md:text-[19px]">
+              A shared log for families caring for an aging parent: who gave which pill, what the doctor said, and what still needs doing.
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-5">
+              <Link href="/signup" className={buttonVariants({ size: 'lg' })}>
+                Start a care group, free
+              </Link>
+              <Link href="/signup" className="font-semibold text-primary hover:underline">
+                I have an invite code
+              </Link>
             </div>
-            <span className="text-sm font-medium text-foreground">CareLog</span>
           </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <p className="text-xs text-muted-foreground">Helping families care together.</p>
-            <Link href="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
-            <Link href="/tos" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+
+          <figure className="relative min-w-0 flex-[1_1_440px] pb-10">
+            <div className="flex flex-col rounded-[20px] border border-border bg-card p-5 shadow-[0_24px_60px_-24px_rgba(21,48,40,0.22)]">
+              <div className="flex items-baseline justify-between pb-2.5">
+                <span className="text-[17px] font-semibold">Today’s medications</span>
+                <span className="text-sm text-muted-foreground">Tuesday</span>
+              </div>
+              {sampleDoses.map((d, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'grid grid-cols-[72px_minmax(0,1fr)_auto] items-center gap-3 py-3 text-[15px]',
+                    d.state === 'missed' ? '-mx-2.5 rounded-[10px] bg-attention px-2.5' : 'border-t border-border'
+                  )}
+                >
+                  <span className={cn('tabular-nums', d.state === 'missed' ? 'font-semibold text-attention-foreground' : d.state === 'done' ? 'text-muted-foreground' : 'font-semibold')}>
+                    {d.time}
+                  </span>
+                  <span className="truncate font-semibold">{d.name}</span>
+                  <span className={cn('text-sm', d.state === 'missed' ? 'font-semibold text-attention-foreground' : 'text-foreground/75')}>{d.status}</span>
+                </div>
+              ))}
+            </div>
+            <div className="absolute bottom-0 left-4 flex w-64 flex-col gap-1.5 rounded-2xl border border-border bg-card p-3.5 shadow-[0_16px_40px_-20px_rgba(21,48,40,0.25)] md:-left-7">
+              <span className="text-[13px] text-muted-foreground">Imran · yesterday</span>
+              <span className="text-[15px] text-foreground/90">“Her knee hurts on the stairs again. Ask Dr. Patel Thursday.”</span>
+            </div>
+            <figcaption className="sr-only">An example CareLog Today screen showing medication doses and a family note</figcaption>
+          </figure>
+        </section>
+
+        <section id="how" className="border-y border-border bg-card">
+          <div className="mx-auto flex max-w-6xl flex-wrap gap-12 px-4 py-20 md:px-6">
+            <h2 className="flex-[1_1_280px] text-[34px] leading-[1.12] font-semibold tracking-[-0.025em]">
+              Built around the questions families text each other every day
+            </h2>
+            <dl className="grid flex-[2_1_520px] gap-x-10 gap-y-9 sm:grid-cols-2">
+              {questions.map(({ q, a }) => (
+                <div key={q} className="flex flex-col gap-1.5 border-t-2 border-foreground pt-4">
+                  <dt className="text-lg font-semibold">{q}</dt>
+                  <dd className="text-foreground/75">{a}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
+        </section>
+
+        <section className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-6 px-4 py-18 md:px-6">
+          <p className="max-w-[30ch] text-[26px] font-semibold tracking-[-0.02em]">
+            Set up a care group in two minutes, then send your family the invite code.
+          </p>
+          <Link href="/signup" className={cn(buttonVariants({ size: 'lg' }), 'bg-foreground text-background hover:bg-foreground/90')}>
+            Start a care group
+          </Link>
+        </section>
+      </main>
+
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-4 py-6 text-sm text-muted-foreground md:px-6">
+          <span>CareLog</span>
+          <span className="flex gap-5">
+            <Link href="/privacy" className="hover:text-foreground">Privacy policy</Link>
+            <Link href="/tos" className="hover:text-foreground">Terms of service</Link>
+          </span>
         </div>
       </footer>
-    </div>
-  )
-}
-
-function FeatureCard({
-  icon, bg, title, description,
-}: {
-  icon: React.ReactNode
-  bg: string
-  title: string
-  description: string
-}) {
-  return (
-    <div className="flex flex-col gap-4 p-6 rounded-2xl border border-border bg-card hover:shadow-md transition-shadow">
-      <div className={`${bg} dark:bg-white/5 rounded-xl p-3 h-fit w-fit`}>{icon}</div>
-      <div>
-        <h3 className="font-semibold text-foreground mb-1.5">{title}</h3>
-        <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-      </div>
     </div>
   )
 }

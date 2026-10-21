@@ -27,12 +27,16 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const authRoutes = ['/login', '/signup']
-  const isAuthRoute = authRoutes.some(r => pathname.startsWith(r))
-  const isPublicRoute = pathname === '/'
+  const publicPaths = new Set(['/', '/login', '/signup', '/forgot-password', '/reset-password', '/privacy', '/tos'])
+  const publicPrefixes = ['/api/auth', '/emergency']
+  const isPublic = publicPaths.has(pathname) || publicPrefixes.some(p => pathname.startsWith(p))
+  const isAuthRoute = pathname === '/login' || pathname === '/signup'
 
-  if (!user && !isAuthRoute && !isPublicRoute) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if (!user && !isPublic) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    url.searchParams.set('next', pathname)
+    return NextResponse.redirect(url)
   }
 
   if (user && isAuthRoute) {
@@ -43,5 +47,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/auth).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon\\.ico|favicon\\.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Heart } from 'lucide-react'
+import { BrandMark } from '@/components/layout/BrandMark'
 
 export const metadata = {
   title: 'Privacy Policy – CareLog',
@@ -11,9 +11,7 @@ export default function PrivacyPage() {
       <header className="border-b border-border">
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-teal-600 rounded-xl p-1.5">
-              <Heart className="h-5 w-5 text-white" />
-            </div>
+            <BrandMark className="size-8" />
             <span className="text-xl font-bold text-foreground">CareLog</span>
           </Link>
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -117,7 +115,7 @@ export default function PrivacyPage() {
           <Section title="Contact">
             <p>
               Questions about this policy? Email us at{' '}
-              <a href="mailto:usmannaveed012@gmail.com" className="text-teal-600 hover:underline">
+              <a href="mailto:usmannaveed012@gmail.com" className="text-primary hover:underline">
                 usmannaveed012@gmail.com
               </a>
               .
@@ -144,7 +142,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <section>
       <h2 className="text-xl font-semibold text-foreground mb-4 pb-2 border-b border-border">{title}</h2>
-      <div className="space-y-3 text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_a]:text-teal-600 [&_a:hover]:underline">
+      <div className="space-y-3 text-muted-foreground leading-relaxed [&_strong]:text-foreground [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-2 [&_a]:text-primary [&_a:hover]:underline">
         {children}
       </div>
     </section>

@@ -1,309 +1,228 @@
-﻿import { createClient } from '@/lib/supabase/server'
+﻿import Link from 'next/link'
+import { format, isAfter, parseISO } from 'date-fns'
+import { MapPin } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 import { getUserCareGroup } from '@/app/actions/care-group'
 import { getMedications, getMedicationLogs } from '@/app/actions/medications'
 import { getAppointments } from '@/app/actions/appointments'
 import { getVisitNotes } from '@/app/actions/visits'
 import { getTasks } from '@/app/actions/tasks'
-import { getLatestVitals } from '@/app/actions/vitals'
+import { getVitals } from '@/app/actions/vitals'
+import { getProfile } from '@/app/actions/profile'
 import { SetupGroup } from '@/components/onboarding/SetupGroup'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Pill, Calendar, ClipboardList, CheckSquare, Copy, Users, Activity, ShieldAlert } from 'lucide-react'
-import { format, isAfter, isBefore, addDays, parseISO } from 'date-fns'
-import Link from 'next/link'
-import { CopyInviteCode } from '@/components/dashboard/CopyInviteCode'
+import { TodayHeader, TodayMedications, WriteNoteLink } from '@/components/today/TodayMedications'
+import { TodayTasks } from '@/components/today/TodayTasks'
+import { MoodLabel } from '@/components/visits/MoodLabel'
+import { initials } from '@/lib/utils'
+import type { Medication, MedicationLog, VisitNote, VitalReading } from '@/types'
 
-export default async function DashboardPage() {
+export const metadata = { title: 'Today' }
+
+const VITAL_LABELS: Record<VitalReading['type'], string> = {
+  blood_pressure: 'Blood pressure',
+  blood_sugar: 'Blood sugar',
+  weight: 'Weight',
+  heart_rate: 'Heart rate',
+  oxygen_saturation: 'O₂ saturation',
+  temperature: 'Temperature',
+}
+const VITAL_ORDER = Object.keys(VITAL_LABELS) as VitalReading['type'][]
+
+export default async function TodayPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   const group = await getUserCareGroup()
+  if (!group) return <SetupGroup />
 
-  if (!group) {
-    return <SetupGroup />
-  }
-
-  const [medications, recentLogs, appointments, visits, tasks, latestVitals] = await Promise.all([
+  const [medications, logs, appointments, visits, tasks, vitals, profile] = await Promise.all([
     getMedications(group.id),
-    getMedicationLogs(group.id, 5),
+    getMedicationLogs(group.id, 60),
     getAppointments(group.id),
     getVisitNotes(group.id),
     getTasks(group.id),
-    getLatestVitals(group.id),
+    getVitals(group.id),
+    getProfile(),
   ])
 
+  const recipient = Array.isArray(group.care_recipient) ? group.care_recipient[0] : group.care_recipient
+  const recipientFirstName: string | undefined = recipient?.name?.split(' ')[0]
+
   const now = new Date()
-  const nextWeek = addDays(now, 7)
-  const upcomingAppts = appointments.filter(a =>
-    a.status === 'upcoming' && isAfter(parseISO(a.appointment_date), now)
-  ).slice(0, 3)
-
-  const pendingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'in_progress')
-  const myTasks = pendingTasks.filter(t => t.assigned_to === user?.id)
-  const activeMeds = medications.filter(m => m.active)
-
-  const recipient = group.care_recipient?.[0] ?? group.care_recipient
+  const nextAppt = appointments.find(a => a.status === 'upcoming' && isAfter(parseISO(a.appointment_date), now))
+  const myTasks = tasks
+    .filter(t => t.assigned_to === user?.id && (t.status === 'pending' || t.status === 'in_progress'))
+    .sort((a, b) => (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999'))
+  const vitalSeries = VITAL_ORDER
+    .map(type => ({ type, readings: (vitals as VitalReading[]).filter(v => v.type === type) }))
+    .filter(s => s.readings.length > 0)
+    .slice(0, 3)
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-8 rounded-xl bg-gradient-to-br from-teal-50 to-emerald-50/40 border border-teal-100/80 px-5 py-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-sm text-teal-600/70 mb-1">
-              {format(now, 'EEEE, MMMM d, yyyy')}
-            </p>
-            <h1 className="text-2xl font-bold text-foreground">
-              {recipient ? `Caring for ${recipient.name}` : group.name}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link
-              href={`/emergency/${group.invite_code}`}
-              target="_blank"
-              className="flex items-center gap-1.5 text-xs text-red-600 border border-red-200 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium transition-colors"
-            >
-              <ShieldAlert className="h-3.5 w-3.5" />
-              Emergency Info
-            </Link>
-            <CopyInviteCode code={group.invite_code} />
-          </div>
+    <div className="mx-auto flex max-w-6xl flex-col gap-7 px-4 py-6 md:px-10 md:py-9">
+      <header className="flex flex-wrap items-end justify-between gap-5">
+        <TodayHeader
+          firstName={profile?.full_name?.split(' ')[0]}
+          recipientFirstName={recipientFirstName}
+          medications={medications as Medication[]}
+          logs={logs as MedicationLog[]}
+          nextAppointment={nextAppt}
+        />
+        <div className="hidden flex-wrap gap-2.5 md:flex">
+          <WriteNoteLink />
+        </div>
+      </header>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <TodayMedications
+            careGroupId={group.id}
+            medications={medications as Medication[]}
+            logs={logs as MedicationLog[]}
+          />
+          <FamilyNotes visits={(visits as VisitNote[]).slice(0, 3)} />
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-6">
+          <Panel title="Next appointment" href="/appointments" linkLabel="All">
+            {nextAppt ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start gap-3.5">
+                  <span className="w-14 shrink-0 overflow-hidden rounded-xl border border-border text-center">
+                    <span className="block bg-primary py-0.5 text-xs font-semibold text-primary-foreground">
+                      {format(parseISO(nextAppt.appointment_date), 'EEE')}
+                    </span>
+                    <span className="block py-1 text-[22px] font-semibold tabular-nums">
+                      {format(parseISO(nextAppt.appointment_date), 'd')}
+                    </span>
+                  </span>
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="text-base font-semibold">{nextAppt.title}</span>
+                    <span className="text-sm text-foreground/80">
+                      {[nextAppt.doctor_name, format(parseISO(nextAppt.appointment_date), 'MMM d · h:mm a')].filter(Boolean).join(' · ')}
+                    </span>
+                    {nextAppt.location && (
+                      <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="size-3.5 shrink-0" aria-hidden="true" /> {nextAppt.location}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {nextAppt.notes && (
+                  <p className="rounded-[10px] bg-muted px-3 py-2.5 text-sm text-foreground/80 line-clamp-3">{nextAppt.notes}</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nothing booked.</p>
+            )}
+          </Panel>
+
+          <Panel title="Your tasks" href="/tasks" linkLabel={tasks.length ? `All ${tasks.length}` : 'Tasks'}>
+            <TodayTasks tasks={myTasks.slice(0, 4).map(t => ({ id: t.id, title: t.title, due_date: t.due_date }))} />
+          </Panel>
+
+          <Panel title="Latest vitals" href="/vitals" linkLabel="Trends">
+            {vitalSeries.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No readings yet.</p>
+            ) : (
+              <ul className="flex flex-col">
+                {vitalSeries.map(({ type, readings }) => {
+                  const latest = readings[0]
+                  return (
+                    <li key={type} className="grid grid-cols-[minmax(0,1fr)_84px] items-center gap-3 border-t border-border py-2.5 first:border-t-0 first:pt-0">
+                      <span className="flex min-w-0 flex-col">
+                        <span className="truncate text-sm text-muted-foreground">
+                          {VITAL_LABELS[type]} · {format(parseISO(latest.recorded_at), 'MMM d, h:mm a')}
+                        </span>
+                        <span className="text-xl font-semibold tracking-[-0.01em] tabular-nums">
+                          {latest.value} <span className="text-sm font-medium text-muted-foreground">{latest.unit}</span>
+                        </span>
+                      </span>
+                      <Sparkline values={readings.slice(0, 8).reverse().map(r => parseFloat(r.value))} />
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </Panel>
         </div>
       </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <StatCard
-          icon={<Pill className="h-5 w-5 text-teal-600" />}
-          label="Active Medications"
-          value={activeMeds.length}
-          href="/medications"
-          bg="bg-teal-50"
-        />
-        <StatCard
-          icon={<Calendar className="h-5 w-5 text-emerald-600" />}
-          label="Upcoming Appts"
-          value={upcomingAppts.length}
-          href="/appointments"
-          bg="bg-emerald-50"
-        />
-        <StatCard
-          icon={<ClipboardList className="h-5 w-5 text-purple-600" />}
-          label="Visit Notes"
-          value={visits.length}
-          href="/visits"
-          bg="bg-purple-50"
-        />
-        <StatCard
-          icon={<CheckSquare className="h-5 w-5 text-orange-600" />}
-          label="Pending Tasks"
-          value={pendingTasks.length}
-          href="/tasks"
-          bg="bg-orange-50"
-        />
-        <StatCard
-          icon={<Activity className="h-5 w-5 text-rose-600" />}
-          label="Vitals Tracked"
-          value={Object.keys(latestVitals).length}
-          href="/vitals"
-          bg="bg-rose-50"
-        />
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Upcoming appointments */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-emerald-600" />
-                Upcoming Appointments
-              </CardTitle>
-              <Link href="/appointments" className="text-xs text-teal-600 hover:underline">View all</Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {upcomingAppts.length === 0 ? (
-              <EmptyState text="No upcoming appointments" />
-            ) : (
-              <div className="space-y-3">
-                {upcomingAppts.map(appt => (
-                  <div key={appt.id} className="flex items-start gap-3">
-                    <div className="bg-emerald-50 rounded-lg p-2 flex-shrink-0">
-                      <Calendar className="h-4 w-4 text-emerald-600" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-sm truncate">{appt.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {format(parseISO(appt.appointment_date), 'MMM d, h:mm a')}
-                        {appt.doctor_name && ` · ${appt.doctor_name}`}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* My tasks */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <CheckSquare className="h-4 w-4 text-orange-600" />
-                My Tasks
-              </CardTitle>
-              <Link href="/tasks" className="text-xs text-teal-600 hover:underline">View all</Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {myTasks.length === 0 ? (
-              <EmptyState text="No tasks assigned to you" />
-            ) : (
-              <div className="space-y-2">
-                {myTasks.slice(0, 4).map(task => (
-                  <div key={task.id} className="flex items-center gap-3">
-                    <PriorityDot priority={task.priority} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{task.title}</div>
-                      {task.due_date && (
-                        <div className="text-xs text-muted-foreground">
-                          Due {format(parseISO(task.due_date), 'MMM d')}
-                        </div>
-                      )}
-                    </div>
-                    <StatusBadge status={task.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent medication logs */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Pill className="h-4 w-4 text-teal-600" />
-                Recent Medication Logs
-              </CardTitle>
-              <Link href="/medications" className="text-xs text-teal-600 hover:underline">View all</Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {recentLogs.length === 0 ? (
-              <EmptyState text="No medication logs yet" />
-            ) : (
-              <div className="space-y-3">
-                {recentLogs.map(log => (
-                  <div key={log.id} className="flex items-start gap-3">
-                    <div className={`rounded-lg p-2 flex-shrink-0 ${log.skipped ? 'bg-red-50' : 'bg-teal-50'}`}>
-                      <Pill className={`h-4 w-4 ${log.skipped ? 'text-red-500' : 'text-teal-600'}`} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium">
-                        {log.medication?.name}
-                        {log.skipped && <span className="ml-1 text-red-500 text-xs">(skipped)</span>}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {log.profile?.full_name} · {format(parseISO(log.administered_at), 'MMM d, h:mm a')}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Recent visits */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-purple-600" />
-                Recent Visits
-              </CardTitle>
-              <Link href="/visits" className="text-xs text-teal-600 hover:underline">View all</Link>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {visits.length === 0 ? (
-              <EmptyState text="No visit notes yet" />
-            ) : (
-              <div className="space-y-3">
-                {visits.slice(0, 3).map(visit => (
-                  <div key={visit.id} className="flex items-start gap-3">
-                    <MoodDot mood={visit.mood} />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium">{visit.visitor?.full_name ?? 'Unknown'}</div>
-                      <div className="text-xs text-muted-foreground line-clamp-1">{visit.notes}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {format(parseISO(visit.visit_date), 'MMM d, yyyy')}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }
 
-function StatCard({ icon, label, value, href, bg }: {
-  icon: React.ReactNode
-  label: string
-  value: number
+function Panel({ title, href, linkLabel, children }: {
+  title: string
   href: string
-  bg: string
+  linkLabel: string
+  children: React.ReactNode
 }) {
+  const id = `panel-${title.toLowerCase().replace(/\s+/g, '-')}`
   return (
-    <Link href={href} className="h-full">
-      <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-        <CardContent className="pt-6 pb-5">
-          <div className={`inline-flex rounded-xl p-2.5 ${bg} mb-4`}>{icon}</div>
-          <div className="text-3xl font-bold tracking-tight">{value}</div>
-          <div className="text-xs text-muted-foreground mt-1.5 leading-snug">{label}</div>
-        </CardContent>
-      </Card>
-    </Link>
+    <section aria-labelledby={id} className="flex flex-col gap-3.5 rounded-2xl border border-border bg-card p-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id={id} className="text-[15px] font-semibold text-muted-foreground">{title}</h2>
+        <Link href={href} className="text-sm font-medium text-primary hover:underline">{linkLabel}</Link>
+      </div>
+      {children}
+    </section>
   )
 }
 
-function EmptyState({ text }: { text: string }) {
-  return <p className="text-sm text-muted-foreground text-center py-4">{text}</p>
-}
-
-function PriorityDot({ priority }: { priority: string }) {
-  const colors: Record<string, string> = {
-    low: 'bg-gray-400',
-    medium: 'bg-teal-500',
-    high: 'bg-orange-500',
-    urgent: 'bg-red-500',
-  }
-  return <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${colors[priority] ?? 'bg-gray-400'}`} />
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
-    pending: { label: 'Pending', variant: 'outline' },
-    in_progress: { label: 'In Progress', variant: 'secondary' },
-    completed: { label: 'Done', variant: 'default' },
-  }
-  const c = config[status] ?? { label: status, variant: 'outline' as const }
-  return <Badge variant={c.variant} className="text-xs shrink-0">{c.label}</Badge>
-}
-
-function MoodDot({ mood }: { mood?: string | null }) {
-  const emoji: Record<string, string> = { good: '😊', fair: '😐', poor: '😟' }
+function FamilyNotes({ visits }: { visits: VisitNote[] }) {
   return (
-    <div className="bg-purple-50 rounded-lg p-2 flex-shrink-0 text-base leading-none">
-      {mood ? emoji[mood] ?? '📝' : '📝'}
-    </div>
+    <section aria-labelledby="family-notes" className="flex flex-col gap-3.5">
+      <div className="flex items-baseline justify-between">
+        <h2 id="family-notes" className="text-lg font-semibold tracking-[-0.01em]">From the family</h2>
+        <Link href="/visits" className="text-sm font-medium text-primary hover:underline">All notes</Link>
+      </div>
+      {visits.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border px-5 py-6 text-sm text-muted-foreground">
+          After a visit or a call, a short note here tells everyone else how they’re doing.{' '}
+          <Link href="/visits" className="font-medium text-primary hover:underline">Write the first one</Link>
+        </div>
+      ) : (
+        visits.map(visit => (
+          <article key={visit.id} className="grid grid-cols-[36px_minmax(0,1fr)] gap-3.5 rounded-2xl border border-border bg-card px-5 py-4">
+            <span className="flex size-9 items-center justify-center rounded-[11px] bg-secondary text-xs font-semibold text-secondary-foreground" aria-hidden="true">
+              {initials(visit.visitor?.full_name)}
+            </span>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                <span className="font-semibold">{visit.visitor?.full_name?.split(' ')[0] ?? 'Someone'}</span>
+                <span className="text-muted-foreground">visited {format(parseISO(visit.visit_date), 'MMM d')}</span>
+                {visit.mood && <MoodLabel mood={visit.mood} />}
+              </div>
+              <p className="max-w-[62ch] whitespace-pre-line text-foreground/90 line-clamp-4">{visit.notes}</p>
+            </div>
+          </article>
+        ))
+      )}
+    </section>
+  )
+}
+
+function Sparkline({ values }: { values: number[] }) {
+  const pts = values.filter(v => Number.isFinite(v))
+  if (pts.length < 2) return <span aria-hidden="true" />
+  const min = Math.min(...pts)
+  const max = Math.max(...pts)
+  const range = max - min || 1
+  const w = 84
+  const h = 28
+  const coords = pts.map((v, i) => [2 + (i / (pts.length - 1)) * (w - 4), h - 4 - ((v - min) / range) * (h - 8)])
+  const last = coords[coords.length - 1]
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-7 w-[84px] text-primary" aria-hidden="true">
+      <polyline
+        points={coords.map(c => c.join(',')).join(' ')}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx={last[0]} cy={last[1]} r="3" fill="currentColor" />
+    </svg>
   )
 }

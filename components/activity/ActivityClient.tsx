@@ -15,12 +15,12 @@ interface Props {
 }
 
 const TYPE_CONFIG: Record<ActivityItem['type'], { label: string; icon: React.ReactNode; color: string }> = {
-  medication_given:       { label: 'Medication',    icon: <Pill className="h-4 w-4" />,          color: 'bg-teal-100 text-teal-700' },
-  medication_skipped:     { label: 'Skipped',       icon: <Pill className="h-4 w-4" />,          color: 'bg-red-100 text-red-700' },
-  visit:                  { label: 'Visit',          icon: <ClipboardList className="h-4 w-4" />, color: 'bg-purple-100 text-purple-700' },
-  task_completed:         { label: 'Task',           icon: <CheckSquare className="h-4 w-4" />,   color: 'bg-orange-100 text-orange-700' },
-  appointment_completed:  { label: 'Appointment',   icon: <Calendar className="h-4 w-4" />,      color: 'bg-emerald-100 text-emerald-700' },
-  vital_recorded:         { label: 'Vital',          icon: <Activity className="h-4 w-4" />,      color: 'bg-rose-100 text-rose-700' },
+  medication_given:       { label: 'Medication',    icon: <Pill className="h-4 w-4" />,          color: 'bg-primary/15 text-primary' },
+  medication_skipped:     { label: 'Skipped',       icon: <Pill className="h-4 w-4" />,          color: 'bg-urgent text-urgent-foreground' },
+  visit:                  { label: 'Visit',          icon: <ClipboardList className="h-4 w-4" />, color: 'bg-primary/15 text-primary' },
+  task_completed:         { label: 'Task',           icon: <CheckSquare className="h-4 w-4" />,   color: 'bg-attention text-attention-foreground' },
+  appointment_completed:  { label: 'Appointment',   icon: <Calendar className="h-4 w-4" />,      color: 'bg-primary/15 text-primary' },
+  vital_recorded:         { label: 'Vital',          icon: <Activity className="h-4 w-4" />,      color: 'bg-primary/15 text-primary' },
 }
 
 type FilterType = ActivityItem['type'] | 'all'
@@ -63,13 +63,10 @@ export function ActivityClient({ items }: Props) {
   ]
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="mx-auto max-w-3xl px-4 py-6 md:px-10 md:py-9">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <LayoutList className="h-6 w-6 text-slate-600" />
-          Activity Feed
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">Everything that's happened, in order</p>
+        <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Activity</h1>
+        <p className="text-muted-foreground text-sm mt-1">Everything that’s happened, in order</p>
       </div>
 
       <div className="flex gap-2 mb-5 flex-wrap">

@@ -119,23 +119,20 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="mx-auto max-w-2xl px-4 py-6 md:px-10 md:py-9">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ClipboardCheck className="h-6 w-6 text-teal-600" />
-            Daily Checklist
-          </h1>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Daily checklist</h1>
           <p className="text-muted-foreground text-sm mt-1">caring for {recipientName}</p>
         </div>
         {isToday && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger render={<Button size="sm" />}>
-              <Plus className="h-4 w-4 mr-1.5" />Add Item
+              <Plus className="h-4 w-4 mr-1.5" />Add item
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Add Checklist Item</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Add checklist item</DialogTitle></DialogHeader>
               <form onSubmit={handleAdd} className="space-y-4 mt-2">
                 <div className="space-y-2">
                   <Label>Task</Label>
@@ -208,14 +205,14 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
           <div className="flex items-center justify-between text-sm mb-1.5">
             <span className="text-muted-foreground">{doneCount} of {totalCount} completed</span>
             {allDone && (
-              <span className="text-green-600 font-medium flex items-center gap-1">
+              <span className="text-primary font-medium flex items-center gap-1">
                 <Check className="h-3.5 w-3.5" /> All done!
               </span>
             )}
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
             <div
-              className="h-full rounded-full bg-teal-500 transition-all duration-300"
+              className="h-full rounded-full bg-primary transition-all duration-300"
               style={{ width: `${progressPct}%` }}
             />
           </div>
@@ -265,8 +262,8 @@ export function ChecklistClient({ careGroupId, recipientName, items, todayComple
                     onClick={() => handleToggle(item.id)}
                     className={`mt-0.5 h-5 w-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                       done
-                        ? 'bg-teal-600 border-teal-600'
-                        : 'border-gray-300 hover:border-teal-500'
+                        ? 'bg-primary border-primary'
+                        : 'border-border hover:border-primary'
                     }`}
                     aria-label={done ? 'Mark incomplete' : 'Mark complete'}
                   >

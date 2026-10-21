@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Heart, Users, Loader2 } from 'lucide-react'
+import { Users, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { BrandMark } from '@/components/layout/BrandMark'
 
 export function SetupGroup() {
   const router = useRouter()
@@ -57,17 +58,15 @@ export function SetupGroup() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <div className="inline-flex bg-teal-600 rounded-2xl p-3 mb-4">
-            <Heart className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome to CareLog</h1>
+          <BrandMark className="size-12 mb-4" />
+          <h1 className="text-2xl font-bold text-foreground">Welcome to CareLog</h1>
           <p className="text-muted-foreground mt-1">Set up your family care coordination hub</p>
         </div>
 
         <Tabs defaultValue="create">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="create">Create Group</TabsTrigger>
-            <TabsTrigger value="join">Join Group</TabsTrigger>
+            <TabsTrigger value="create">Create group</TabsTrigger>
+            <TabsTrigger value="join">Join group</TabsTrigger>
           </TabsList>
 
           <TabsContent value="create">
@@ -79,7 +78,7 @@ export function SetupGroup() {
               <CardContent>
                 <form onSubmit={handleCreate} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Group Name</Label>
+                    <Label>Group name</Label>
                     <Input
                       placeholder="e.g. The Johnson Family"
                       value={groupName}
@@ -88,7 +87,7 @@ export function SetupGroup() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Care Recipient Name</Label>
+                    <Label>Care recipient name</Label>
                     <Input
                       placeholder="e.g. Mom, Dad, Margaret"
                       value={recipientName}
@@ -110,13 +109,13 @@ export function SetupGroup() {
                       type="checkbox"
                       checked={termsAccepted}
                       onChange={e => setTermsAccepted(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 cursor-pointer accent-teal-600"
+                      className="mt-0.5 h-4 w-4 cursor-pointer accent-primary"
                     />
                     <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
                       I agree to the{' '}
-                      <Link href="/tos" target="_blank" className="text-teal-600 hover:underline font-medium">Terms of Service</Link>
+                      <Link href="/tos" target="_blank" className="text-primary hover:underline font-medium">Terms of Service</Link>
                       {' '}and{' '}
-                      <Link href="/privacy" target="_blank" className="text-teal-600 hover:underline font-medium">Privacy Policy</Link>
+                      <Link href="/privacy" target="_blank" className="text-primary hover:underline font-medium">Privacy Policy</Link>
                     </label>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading || !termsAccepted}>
@@ -132,7 +131,7 @@ export function SetupGroup() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5 text-teal-600" />
+                  <Users className="h-5 w-5 text-primary" />
                   Join an existing group
                 </CardTitle>
                 <CardDescription>Enter the invite code shared by your family member</CardDescription>
@@ -140,7 +139,7 @@ export function SetupGroup() {
               <CardContent>
                 <form onSubmit={handleJoin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Invite Code</Label>
+                    <Label>Invite code</Label>
                     <Input
                       placeholder="e.g. abc12345"
                       value={inviteCode}
@@ -154,9 +153,9 @@ export function SetupGroup() {
                   </Button>
                   <p className="text-center text-xs text-muted-foreground leading-relaxed">
                     By continuing you agree to our{' '}
-                    <Link href="/tos" target="_blank" className="text-teal-600 hover:underline">Terms of Service</Link>
+                    <Link href="/tos" target="_blank" className="text-primary hover:underline">Terms of Service</Link>
                     {' '}and{' '}
-                    <Link href="/privacy" target="_blank" className="text-teal-600 hover:underline">Privacy Policy</Link>.
+                    <Link href="/privacy" target="_blank" className="text-primary hover:underline">Privacy Policy</Link>.
                   </p>
                 </form>
               </CardContent>

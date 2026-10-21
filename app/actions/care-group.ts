@@ -139,6 +139,16 @@ export async function getGroupMembers(careGroupId: string) {
   if (!user) return []
 
   const admin = createAdminClient()
+
+  const { data: caller } = await admin
+    .from('group_members')
+    .select('id')
+    .eq('care_group_id', careGroupId)
+    .eq('user_id', user.id)
+    .eq('status', 'approved')
+    .maybeSingle()
+  if (!caller) return []
+
   const { data } = await admin
     .from('group_members')
     .select('*, profile:profiles(*)')

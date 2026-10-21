@@ -1,31 +1,28 @@
 ﻿'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Heart,
-  LayoutDashboard,
+  Sun,
+  ListChecks,
+  LayoutList,
   Pill,
-  Calendar,
-  ClipboardList,
-  CheckSquare,
+  HeartPulse,
+  CalendarDays,
+  NotebookPen,
+  SquareCheckBig,
+  FolderOpen,
   Users,
   LogOut,
-  Menu,
-  X,
-  ClipboardCheck,
-  UserCircle,
-  ChevronDown,
+  ChevronsUpDown,
   Plus,
   Check,
   Loader2,
-  Activity,
-  FolderOpen,
-  LayoutList,
+  BriefcaseMedical,
+  Ellipsis,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, initials } from '@/lib/utils'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,27 +35,48 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { setActiveGroup, createCareGroup, joinCareGroup } from '@/app/actions/care-group'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { BrandMark } from '@/components/layout/BrandMark'
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/activity', label: 'Activity', icon: LayoutList },
-  { href: '/medications', label: 'Medications', icon: Pill },
-  { href: '/vitals', label: 'Vitals', icon: Activity },
-  { href: '/appointments', label: 'Appointments', icon: Calendar },
-  { href: '/visits', label: 'Visit Notes', icon: ClipboardList },
-  { href: '/tasks', label: 'Tasks', icon: CheckSquare },
-  { href: '/checklist', label: 'Daily Checklist', icon: ClipboardCheck },
-  { href: '/documents', label: 'Documents', icon: FolderOpen },
-  { href: '/family', label: 'Family', icon: Users },
+type NavItem = { href: string; label: string; icon: typeof Sun }
+
+const navGroups: { label?: string; items: NavItem[] }[] = [
+  {
+    items: [
+      { href: '/dashboard', label: 'Today', icon: Sun },
+      { href: '/checklist', label: 'Daily checklist', icon: ListChecks },
+      { href: '/activity', label: 'Activity', icon: LayoutList },
+    ],
+  },
+  {
+    label: 'Health',
+    items: [
+      { href: '/medications', label: 'Medications', icon: Pill },
+      { href: '/vitals', label: 'Vitals', icon: HeartPulse },
+      { href: '/appointments', label: 'Appointments', icon: CalendarDays },
+      { href: '/visits', label: 'Visit notes', icon: NotebookPen },
+    ],
+  },
+  {
+    label: 'Family',
+    items: [
+      { href: '/tasks', label: 'Tasks', icon: SquareCheckBig },
+      { href: '/documents', label: 'Documents', icon: FolderOpen },
+      { href: '/family', label: 'People', icon: Users },
+    ],
+  },
+]
+
+// The four destinations used most on a phone; everything else lives under "More".
+const tabItems: NavItem[] = [
+  { href: '/dashboard', label: 'Today', icon: Sun },
+  { href: '/medications', label: 'Meds', icon: Pill },
+  { href: '/appointments', label: 'Calendar', icon: CalendarDays },
+  { href: '/visits', label: 'Notes', icon: NotebookPen },
 ]
 
 interface GroupSummary {
@@ -70,14 +88,25 @@ interface GroupSummary {
 interface SidebarProps {
   careGroupName?: string
   recipientName?: string
+  recipientDetail?: string
   activeGroupId?: string
+  inviteCode?: string
+  userName?: string
   allGroups?: GroupSummary[]
 }
 
-export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups = [] }: SidebarProps) {
+export function Sidebar({
+  careGroupName,
+  recipientName,
+  recipientDetail,
+  activeGroupId,
+  inviteCode,
+  userName,
+  allGroups = [],
+}: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [switching, setSwitching] = useState<string | null>(null)
 
@@ -86,8 +115,11 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
   const [groupName, setGroupName] = useState('')
   const [newRecipientName, setNewRecipientName] = useState('')
   const [dateOfBirth, setDateOfBirth] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
+  const [inviteCodeInput, setInviteCodeInput] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
+
+  const emergencyHref = inviteCode ? `/emergency/${inviteCode}` : undefined
+  const personName = recipientName ?? careGroupName ?? 'Select a person'
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -104,7 +136,7 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
       await setActiveGroup(groupId)
       router.refresh()
     } catch {
-      toast.error('Failed to switch')
+      toast.error('Couldn’t switch. Please try again.')
     } finally {
       setSwitching(null)
     }
@@ -115,7 +147,7 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
     setFormLoading(true)
     try {
       await createCareGroup(groupName, newRecipientName, dateOfBirth || undefined)
-      toast.success('Care group created!')
+      toast.success('Care group created')
       setAddDialogOpen(false)
       setGroupName('')
       setNewRecipientName('')
@@ -133,10 +165,10 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
     e.preventDefault()
     setFormLoading(true)
     try {
-      await joinCareGroup(inviteCode)
-      toast.success('Request sent! The group admin will need to approve your membership.')
+      await joinCareGroup(inviteCodeInput)
+      toast.success('Request sent. The group admin needs to approve it.')
       setAddDialogOpen(false)
-      setInviteCode('')
+      setInviteCodeInput('')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to join group')
     } finally {
@@ -144,190 +176,248 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
     }
   }
 
-  function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
-    return (
-      <>
-        {navItems.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            onClick={onNavigate}
-            className={cn(
-              'relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
-              pathname === href
-                ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-            )}
-          >
-            {pathname === href && (
-              <span className="absolute left-0 inset-y-1.5 w-[3px] bg-teal-600 rounded-r-full" />
-            )}
-            <Icon className="h-4 w-4 flex-shrink-0" />
-            {label}
-          </Link>
-        ))}
-      </>
-    )
-  }
+  const isActive = (href: string) => pathname === href
 
-  function SidebarHeader() {
+  function renderNavLinks(onNavigate?: () => void) {
     return (
-      <div className="px-4 py-5 border-b border-border">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="bg-teal-600 rounded-lg p-1.5">
-            <Heart className="h-5 w-5 text-white" />
-          </div>
-          <div className="font-bold text-sm text-foreground">CareLog</div>
-        </div>
-
-        {allGroups.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="w-full flex items-center justify-between gap-1.5 px-2 py-1.5 rounded-md hover:bg-accent text-left text-sm font-medium transition-colors">
-              <span className="truncate text-foreground">{careGroupName ?? 'Select group'}</span>
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="bottom" align="start">
-              {allGroups.map(g => (
-                <DropdownMenuItem
-                  key={g.id}
-                  onClick={() => handleSwitchGroup(g.id)}
-                  className="flex items-center justify-between gap-3 cursor-pointer"
-                >
-                  <div className="min-w-0">
-                    <div className="font-medium text-sm truncate">{g.name}</div>
-                    {g.recipientName && (
-                      <div className="text-xs text-muted-foreground">Caring for {g.recipientName}</div>
-                    )}
-                  </div>
-                  {switching === g.id
-                    ? <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0 text-muted-foreground" />
-                    : g.id === activeGroupId
-                      ? <Check className="h-3.5 w-3.5 text-teal-600 flex-shrink-0" />
-                      : null
-                  }
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setAddDialogOpen(true)}
-                className="cursor-pointer text-teal-600"
+      <div className="flex flex-col gap-5">
+        {navGroups.map((group, i) => (
+          <div key={group.label ?? i} className="flex flex-col gap-0.5">
+            {group.label && (
+              <span className="px-2.5 pb-1 text-xs font-semibold text-muted-foreground">{group.label}</span>
+            )}
+            {group.items.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={onNavigate}
+                aria-current={isActive(href) ? 'page' : undefined}
+                className={cn(
+                  'flex min-h-10 items-center gap-3 rounded-[10px] px-2.5 text-sm transition-colors',
+                  isActive(href)
+                    ? 'bg-sidebar-accent font-semibold text-foreground'
+                    : 'text-foreground/75 hover:bg-muted hover:text-foreground'
+                )}
               >
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Add family member
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-
-        {recipientName && (
-          <div className="mt-2 px-2 py-1.5 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
-            <div className="text-xs text-muted-foreground">Caring for</div>
-            <div className="text-sm font-medium text-teal-800 dark:text-teal-200">{recipientName}</div>
+                <Icon className={cn('size-[18px] shrink-0', isActive(href) && 'text-primary')} aria-hidden="true" />
+                {label}
+              </Link>
+            ))}
           </div>
-        )}
+        ))}
       </div>
     )
   }
 
-  function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
+  function renderPersonSwitcher(compact = false) {
     return (
-      <div className="px-3 py-4 border-t border-border space-y-1">
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className={cn(
+            'flex items-center gap-3 rounded-xl border border-border bg-muted/50 text-left transition-colors hover:bg-muted',
+            compact ? 'min-h-11 py-1 pr-2.5 pl-1' : 'w-full p-2.5'
+          )}
+        >
+          <span
+            className={cn(
+              'flex shrink-0 items-center justify-center rounded-[10px] bg-primary/15 font-semibold text-primary',
+              compact ? 'size-9 text-xs' : 'size-10 text-sm'
+            )}
+            aria-hidden="true"
+          >
+            {initials(personName)}
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-[15px] font-semibold leading-tight">{personName}</span>
+            {!compact && (recipientDetail || careGroupName) && (
+              <span className="truncate text-xs text-muted-foreground">
+                {[recipientDetail, careGroupName].filter(Boolean).join(' · ')}
+              </span>
+            )}
+          </span>
+          <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="sr-only">Switch person</span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="bottom" align="start" className="min-w-60">
+          {allGroups.map(g => (
+            <DropdownMenuItem
+              key={g.id}
+              onClick={() => handleSwitchGroup(g.id)}
+              className="flex cursor-pointer items-center justify-between gap-3"
+            >
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium">{g.recipientName ?? g.name}</div>
+                <div className="truncate text-xs text-muted-foreground">{g.name}</div>
+              </div>
+              {switching === g.id ? (
+                <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+              ) : g.id === activeGroupId ? (
+                <Check className="size-4 shrink-0 text-primary" />
+              ) : null}
+            </DropdownMenuItem>
+          ))}
+          {allGroups.length > 0 && <DropdownMenuSeparator />}
+          <DropdownMenuItem onClick={() => setAddDialogOpen(true)} className="cursor-pointer text-primary">
+            <Plus className="mr-1.5 size-4" />
+            Add someone to care for
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+
+  function renderEmergencyLink(onNavigate?: () => void) {
+    if (!emergencyHref) return null
+    return (
+      <Link
+        href={emergencyHref}
+        target="_blank"
+        onClick={onNavigate}
+        className="flex items-center gap-3 rounded-xl border border-urgent-border bg-urgent p-3 transition-colors hover:border-urgent-foreground/40"
+      >
+        <BriefcaseMedical className="size-5 shrink-0 text-urgent-foreground" aria-hidden="true" />
+        <span className="flex flex-col">
+          <span className="text-sm font-semibold">Emergency card</span>
+          <span className="text-xs text-muted-foreground">Meds, allergies, contacts</span>
+        </span>
+      </Link>
+    )
+  }
+
+  function renderAccountLinks(onNavigate?: () => void) {
+    return (
+      <div className="flex flex-col gap-0.5">
         <Link
           href="/profile"
           onClick={onNavigate}
+          aria-current={isActive('/profile') ? 'page' : undefined}
           className={cn(
-            'relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150',
-            pathname === '/profile'
-              ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300'
-              : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            'flex min-h-10 items-center gap-3 rounded-[10px] px-2.5 text-sm transition-colors',
+            isActive('/profile') ? 'bg-sidebar-accent font-semibold' : 'text-foreground/75 hover:bg-muted hover:text-foreground'
           )}
         >
-          {pathname === '/profile' && (
-            <span className="absolute left-0 inset-y-1.5 w-[3px] bg-teal-600 rounded-r-full" />
-          )}
-          <UserCircle className="h-4 w-4 flex-shrink-0" />
-          Profile
+          <span className="flex size-6 items-center justify-center rounded-md bg-muted text-[10px] font-semibold text-foreground/75" aria-hidden="true">
+            {initials(userName)}
+          </span>
+          <span className="flex-1 truncate">{userName ?? 'Your profile'}</span>
+          <span className="text-xs text-muted-foreground">Settings</span>
         </Link>
         <ThemeToggle />
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          className="w-full justify-start px-2.5 font-normal text-foreground/75 hover:text-foreground"
           onClick={handleSignOut}
         >
-          <LogOut className="h-4 w-4 mr-3" />
-          Sign Out
+          <LogOut className="mr-1.5 size-4" />
+          Sign out
         </Button>
       </div>
     )
   }
 
+  const moreActive = !tabItems.some(t => isActive(t.href))
+
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card h-screen sticky top-0">
-        <SidebarHeader />
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          <NavLinks />
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-5 overflow-y-auto border-r border-sidebar-border bg-sidebar px-3.5 py-5 md:flex">
+        <Link href="/dashboard" className="flex items-center gap-2.5 px-2">
+          <BrandMark />
+          <span className="text-base font-semibold tracking-[-0.01em]">CareLog</span>
+        </Link>
+        {renderPersonSwitcher()}
+        <nav aria-label="Main" className="flex-1">
+          {renderNavLinks()}
         </nav>
-        <SidebarFooter />
+        <div className="flex flex-col gap-3">
+          {renderEmergencyLink()}
+          {renderAccountLinks()}
+        </div>
       </aside>
 
-      {/* Mobile header */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-border bg-card sticky top-0 z-40">
-        <div className="flex items-center gap-2">
-          <div className="bg-teal-600 rounded-lg p-1.5">
-            <Heart className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-bold text-sm">CareLog</span>
-          {careGroupName && (
-            <span className="text-xs text-muted-foreground truncate max-w-[120px]">{careGroupName}</span>
+      {/* Mobile top bar */}
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-background/90 px-4 py-2.5 backdrop-blur md:hidden">
+        {renderPersonSwitcher(true)}
+        {emergencyHref && (
+          <Link
+            href={emergencyHref}
+            target="_blank"
+            aria-label="Emergency card"
+            className="flex size-11 items-center justify-center rounded-xl border border-urgent-border bg-urgent"
+          >
+            <BriefcaseMedical className="size-5 text-urgent-foreground" aria-hidden="true" />
+          </Link>
+        )}
+      </header>
+
+      {/* Mobile tab bar */}
+      <nav
+        aria-label="Main"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-card px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:hidden"
+      >
+        {tabItems.map(({ href, label, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            aria-current={isActive(href) ? 'page' : undefined}
+            className={cn(
+              'flex min-h-12 flex-col items-center justify-center gap-0.5 text-xs',
+              isActive(href) ? 'font-semibold text-primary' : 'font-medium text-muted-foreground'
+            )}
+          >
+            <Icon className="size-[22px]" aria-hidden="true" />
+            {label}
+          </Link>
+        ))}
+        <button
+          type="button"
+          onClick={() => setMoreOpen(true)}
+          aria-expanded={moreOpen}
+          className={cn(
+            'flex min-h-12 flex-col items-center justify-center gap-0.5 text-xs',
+            moreActive ? 'font-semibold text-primary' : 'font-medium text-muted-foreground'
           )}
-        </div>
-        <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
-          <Menu className="h-5 w-5" />
-        </Button>
-      </div>
+        >
+          <Ellipsis className="size-[22px]" aria-hidden="true" />
+          More
+        </button>
+      </nav>
 
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-          <div className="relative w-64 bg-card h-full shadow-xl flex flex-col">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-3 right-3 z-10"
-              onClick={() => setMobileOpen(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-            <SidebarHeader />
-            <nav className="flex-1 px-3 py-4 space-y-1">
-              <NavLinks onNavigate={() => setMobileOpen(false)} />
-            </nav>
-            <SidebarFooter onNavigate={() => setMobileOpen(false)} />
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <SheetContent side="left" className="w-[85%] gap-5 overflow-y-auto bg-sidebar px-3.5 py-5">
+          <SheetTitle className="flex items-center gap-2.5 px-2">
+            <BrandMark />
+            CareLog
+          </SheetTitle>
+          <nav aria-label="All sections">
+            {renderNavLinks(() => setMoreOpen(false))}
+          </nav>
+          <div className="mt-auto flex flex-col gap-3">
+            {renderEmergencyLink(() => setMoreOpen(false))}
+            {renderAccountLinks(() => setMoreOpen(false))}
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
-      {/* Add family member dialog */}
+      {/* Add someone dialog */}
       <Dialog open={addDialogOpen} onOpenChange={(open: boolean) => setAddDialogOpen(open)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add a family member</DialogTitle>
+            <DialogTitle>Add someone to care for</DialogTitle>
           </DialogHeader>
           <Tabs defaultValue="create">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="create">New group</TabsTrigger>
-              <TabsTrigger value="join">Join group</TabsTrigger>
+              <TabsTrigger value="join">Join with a code</TabsTrigger>
             </TabsList>
 
             <TabsContent value="create" className="mt-4">
-              <form onSubmit={handleCreate} className="space-y-3">
+              <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label>Group Name</Label>
+                  <Label htmlFor="sidebar-group-name">Group name</Label>
                   <Input
+                    id="sidebar-group-name"
                     placeholder="e.g. Caring for Dad"
                     value={groupName}
                     onChange={e => setGroupName(e.target.value)}
@@ -335,61 +425,58 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Family Member&apos;s Name</Label>
+                  <Label htmlFor="sidebar-recipient">Their name</Label>
                   <Input
-                    placeholder="e.g. Dad, Robert"
+                    id="sidebar-recipient"
+                    placeholder="e.g. Robert Chen"
                     value={newRecipientName}
                     onChange={e => setNewRecipientName(e.target.value)}
                     required
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>
-                    Date of Birth{' '}
-                    <span className="text-muted-foreground text-xs font-normal">(optional)</span>
+                  <Label htmlFor="sidebar-dob">
+                    Date of birth <span className="text-xs font-normal text-muted-foreground">(optional)</span>
                   </Label>
-                  <Input
-                    type="date"
-                    value={dateOfBirth}
-                    onChange={e => setDateOfBirth(e.target.value)}
-                  />
+                  <Input id="sidebar-dob" type="date" value={dateOfBirth} onChange={e => setDateOfBirth(e.target.value)} />
                 </div>
-                <div className="flex items-start gap-2.5 rounded-lg border p-3 bg-muted/30">
+                <div className="flex items-start gap-2.5 rounded-[10px] border bg-muted/40 p-3">
                   <input
                     id="sidebar-terms"
                     type="checkbox"
                     checked={termsAccepted}
                     onChange={e => setTermsAccepted(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 cursor-pointer accent-teal-600"
+                    className="mt-0.5 size-4 cursor-pointer accent-primary"
                   />
-                  <label htmlFor="sidebar-terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer select-none">
+                  <label htmlFor="sidebar-terms" className="cursor-pointer text-xs leading-relaxed text-muted-foreground select-none">
                     I agree to the{' '}
-                    <Link href="/tos" target="_blank" className="text-teal-600 hover:underline font-medium">Terms of Service</Link>
+                    <Link href="/tos" target="_blank" className="font-medium text-primary hover:underline">Terms of Service</Link>
                     {' '}and{' '}
-                    <Link href="/privacy" target="_blank" className="text-teal-600 hover:underline font-medium">Privacy Policy</Link>
+                    <Link href="/privacy" target="_blank" className="font-medium text-primary hover:underline">Privacy Policy</Link>
                   </label>
                 </div>
                 <Button type="submit" className="w-full" disabled={formLoading || !termsAccepted}>
-                  {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Create Group
+                  {formLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
+                  Create group
                 </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="join" className="mt-4">
-              <form onSubmit={handleJoin} className="space-y-3">
+              <form onSubmit={handleJoin} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label>Invite Code</Label>
+                  <Label htmlFor="sidebar-invite">Invite code</Label>
                   <Input
+                    id="sidebar-invite"
                     placeholder="e.g. abc12345"
-                    value={inviteCode}
-                    onChange={e => setInviteCode(e.target.value)}
+                    value={inviteCodeInput}
+                    onChange={e => setInviteCodeInput(e.target.value)}
                     required
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={formLoading}>
-                  {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Join Group
+                  {formLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
+                  Join group
                 </Button>
               </form>
             </TabsContent>
@@ -399,3 +486,4 @@ export function Sidebar({ careGroupName, recipientName, activeGroupId, allGroups
     </>
   )
 }
+

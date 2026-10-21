@@ -108,21 +108,18 @@ export function AppointmentsClient({ careGroupId, appointments }: Props) {
   const needsOutcome = upcoming.filter(a => isBefore(parseISO(a.appointment_date), now))
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl px-4 py-6 md:px-10 md:py-9">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="h-6 w-6 text-emerald-600" />
-            Appointments
-          </h1>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Appointments</h1>
           <p className="text-muted-foreground text-sm mt-1">{upcoming.length} upcoming</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger render={<Button />}>
-            <Plus className="h-4 w-4 mr-2" />Add Appointment
+            <Plus className="h-4 w-4 mr-2" />Add appointment
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Schedule Appointment</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Schedule appointment</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4 mt-2">
               <div className="space-y-2">
                 <Label>Title</Label>
@@ -161,7 +158,7 @@ export function AppointmentsClient({ careGroupId, appointments }: Props) {
       {/* Outcome dialog */}
       <Dialog open={!!outcomeDialog} onOpenChange={() => setOutcomeDialog(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Mark Appointment Completed</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Mark appointment completed</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
               <Label>Outcome / Notes <span className="text-muted-foreground">(optional)</span></Label>
@@ -186,13 +183,13 @@ export function AppointmentsClient({ careGroupId, appointments }: Props) {
 
         <TabsContent value="upcoming">
           {needsOutcome.length > 0 && (
-            <div className="flex items-start gap-3 p-4 mb-4 rounded-lg border border-amber-200 bg-amber-50">
-              <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 mb-4 rounded-lg border border-attention-border bg-attention">
+              <AlertTriangle className="h-5 w-5 text-attention-foreground flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <div className="font-medium text-amber-800 text-sm">
+                <div className="font-medium text-attention-foreground text-sm">
                   {needsOutcome.length} appointment{needsOutcome.length > 1 ? 's' : ''} past their date — add an outcome
                 </div>
-                <div className="text-xs text-amber-700 mt-0.5">
+                <div className="text-xs text-attention-foreground mt-0.5">
                   {needsOutcome.map(a => a.title).join(', ')}
                 </div>
               </div>
@@ -234,17 +231,17 @@ function ApptCard({ appt, onComplete, onCancel, onDelete, now }: {
 }) {
   const isOverdue = now && appt.status === 'upcoming' && isBefore(parseISO(appt.appointment_date), now)
   const statusColors: Record<string, string> = {
-    upcoming: isOverdue ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800',
-    completed: 'bg-teal-100 text-teal-800',
-    cancelled: 'bg-gray-100 text-gray-600',
+    upcoming: isOverdue ? 'bg-attention text-attention-foreground' : 'bg-primary/15 text-primary',
+    completed: 'bg-primary/15 text-primary',
+    cancelled: 'bg-muted text-muted-foreground',
   }
 
   return (
     <Card>
       <CardContent className="py-4 px-4 flex items-start gap-4">
-        <div className="bg-emerald-50 rounded-lg p-3 flex-shrink-0 text-center min-w-[56px]">
-          <div className="text-xs text-emerald-600 font-medium">{format(parseISO(appt.appointment_date), 'MMM')}</div>
-          <div className="text-xl font-bold text-emerald-700 leading-tight">{format(parseISO(appt.appointment_date), 'd')}</div>
+        <div className="bg-primary/10 rounded-lg p-3 flex-shrink-0 text-center min-w-[56px]">
+          <div className="text-xs text-primary font-medium">{format(parseISO(appt.appointment_date), 'MMM')}</div>
+          <div className="text-xl font-bold text-primary leading-tight">{format(parseISO(appt.appointment_date), 'd')}</div>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-start gap-2 flex-wrap">
@@ -259,12 +256,12 @@ function ApptCard({ appt, onComplete, onCancel, onDelete, now }: {
             {appt.location && <><MapPin className="h-3 w-3 inline mx-1" />{appt.location}</>}
           </div>
           {appt.notes && <div className="text-xs text-muted-foreground mt-1 italic">{appt.notes}</div>}
-          {appt.outcome && <div className="text-xs text-teal-700 mt-1 bg-teal-50 rounded px-2 py-1">Outcome: {appt.outcome}</div>}
+          {appt.outcome && <div className="text-xs text-primary mt-1 bg-primary/10 rounded px-2 py-1">Outcome: {appt.outcome}</div>}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           {isOverdue && (
             <Button size="sm" className="h-7 text-xs" onClick={() => onComplete(appt)}>
-              <Check className="h-3.5 w-3.5 mr-1" />Add Outcome
+              <Check className="h-3.5 w-3.5 mr-1" />Add outcome
             </Button>
           )}
           <DropdownMenu>
@@ -275,10 +272,10 @@ function ApptCard({ appt, onComplete, onCancel, onDelete, now }: {
               {appt.status === 'upcoming' && (
                 <>
                   <DropdownMenuItem onClick={() => onComplete(appt)}>
-                    <Check className="h-4 w-4 mr-2 text-green-600" />Mark Completed
+                    <Check className="h-4 w-4 mr-2 text-primary" />Mark completed
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onCancel(appt.id)}>
-                    <X className="h-4 w-4 mr-2 text-orange-500" />Cancel
+                    <X className="h-4 w-4 mr-2 text-attention-foreground" />Cancel
                   </DropdownMenuItem>
                 </>
               )}

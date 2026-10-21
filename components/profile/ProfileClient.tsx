@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Camera, Loader2, User } from 'lucide-react'
+import { Camera, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateProfile, updateAvatar } from '@/app/actions/profile'
 import { format, parseISO } from 'date-fns'
@@ -79,19 +79,16 @@ export function ProfileClient({ profile }: Props) {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
+    <div className="mx-auto max-w-2xl px-4 py-6 md:px-10 md:py-9">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <User className="h-6 w-6 text-teal-600" />
-          My Profile
-        </h1>
+        <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Your profile</h1>
         <p className="text-muted-foreground text-sm mt-1">Manage your personal information</p>
       </div>
 
       <div className="space-y-6">
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-base">Profile Picture</CardTitle>
+            <CardTitle className="text-base">Profile picture</CardTitle>
             <CardDescription>Click the photo to upload a new one (max 5MB)</CardDescription>
           </CardHeader>
           <CardContent>
@@ -101,7 +98,7 @@ export function ProfileClient({ profile }: Props) {
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={fullName} className="h-full w-full object-cover" />
                   ) : (
-                    <div className="h-full w-full bg-teal-100 flex items-center justify-center text-teal-700 text-2xl font-semibold">
+                    <div className="h-full w-full bg-primary/15 flex items-center justify-center text-primary text-2xl font-semibold">
                       {fullName ? getInitials(fullName) : '?'}
                     </div>
                   )}
@@ -141,12 +138,12 @@ export function ProfileClient({ profile }: Props) {
 
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-base">Personal Information</CardTitle>
+            <CardTitle className="text-base">Personal information</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSave} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">Full name</Label>
                 <Input
                   id="fullName"
                   value={fullName}
@@ -168,7 +165,7 @@ export function ProfileClient({ profile }: Props) {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number</Label>
+                <Label htmlFor="phoneNumber">Phone number</Label>
                 <Input
                   id="phoneNumber"
                   type="tel"

@@ -25,10 +25,10 @@ interface Props {
 }
 
 const VITAL_CONFIG: Record<VitalReading['type'], { label: string; unit: string; placeholder: string; color: string }> = {
-  blood_pressure:     { label: 'Blood Pressure',     unit: 'mmHg', placeholder: '120/80',  color: '#ef4444' },
-  heart_rate:         { label: 'Heart Rate',          unit: 'bpm',  placeholder: '72',      color: '#ec4899' },
+  blood_pressure:     { label: 'Blood pressure',     unit: 'mmHg', placeholder: '120/80',  color: '#ef4444' },
+  heart_rate:         { label: 'Heart rate',          unit: 'bpm',  placeholder: '72',      color: '#ec4899' },
   weight:             { label: 'Weight',              unit: 'lbs',  placeholder: '165',     color: '#3b82f6' },
-  blood_sugar:        { label: 'Blood Sugar',         unit: 'mg/dL',placeholder: '95',      color: '#f97316' },
+  blood_sugar:        { label: 'Blood sugar',         unit: 'mg/dL',placeholder: '95',      color: '#f97316' },
   temperature:        { label: 'Temperature',         unit: '°F',   placeholder: '98.6',    color: '#eab308' },
   oxygen_saturation:  { label: 'O₂ Saturation',       unit: '%',    placeholder: '98',      color: '#0d9488' },
 }
@@ -99,23 +99,20 @@ export function VitalsClient({ careGroupId, vitals }: Props) {
   const hasAny = vitals.length > 0
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl px-4 py-6 md:px-10 md:py-9">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Activity className="h-6 w-6 text-rose-600" />
-            Vitals
-          </h1>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Vitals</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {hasAny ? `${vitals.length} readings recorded` : 'Track health measurements over time'}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger render={<Button />}>
-            <Plus className="h-4 w-4 mr-2" />Record Vital
+            <Plus className="h-4 w-4 mr-2" />Record vital
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Record Vital Sign</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Record vital sign</DialogTitle></DialogHeader>
             <form onSubmit={handleAdd} className="space-y-4 mt-2">
               <div className="space-y-2">
                 <Label>Type</Label>

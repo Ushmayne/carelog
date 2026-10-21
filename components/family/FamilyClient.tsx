@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Users, Copy, Check, Crown, UserX, UserCheck, Clock, Pencil, Phone } from 'lucide-react'
+import { Copy, Check, Crown, UserX, UserCheck, Clock, Pencil, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -107,12 +107,9 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl px-4 py-6 md:px-10 md:py-9">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Users className="h-6 w-6 text-teal-600" />
-          Family Members
-        </h1>
+        <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">People</h1>
         <p className="text-muted-foreground text-sm mt-1">{approvedMembers.length} member{approvedMembers.length !== 1 ? 's' : ''} in {group.name}</p>
       </div>
 
@@ -120,19 +117,19 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
         <div className="md:col-span-2 space-y-4">
           {/* Pending requests — admin only */}
           {currentUserRole === 'admin' && pendingMembers.length > 0 && (
-            <Card className="border-amber-200 bg-amber-50/50">
+            <Card className="border-attention-border bg-attention">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2 text-amber-700">
+                <CardTitle className="text-base flex items-center gap-2 text-attention-foreground">
                   <Clock className="h-4 w-4" />
-                  Pending Requests
-                  <Badge variant="secondary" className="bg-amber-100 text-amber-700 text-xs">{pendingMembers.length}</Badge>
+                  Pending requests
+                  <Badge variant="secondary" className="bg-attention text-attention-foreground text-xs">{pendingMembers.length}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingMembers.map(member => (
                   <div key={member.id} className="flex items-center gap-3">
                     <Avatar className="h-9 w-9">
-                      <AvatarFallback className="bg-amber-100 text-amber-700 text-sm font-semibold">
+                      <AvatarFallback className="bg-attention text-attention-foreground text-sm font-semibold">
                         {getInitials(member.profile?.full_name ?? 'U')}
                       </AvatarFallback>
                     </Avatar>
@@ -147,7 +144,7 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs border-green-300 text-green-700 hover:bg-green-50"
+                        className="h-7 text-xs border-primary/25 text-primary hover:bg-primary/10"
                         disabled={actionInProgress === member.id}
                         onClick={() => handleApprove(member.id)}
                       >
@@ -157,7 +154,7 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                        className="h-7 text-xs border-urgent-border text-urgent-foreground hover:bg-urgent"
                         disabled={actionInProgress === member.id}
                         onClick={() => handleRemove(member.id, member.profile?.full_name ?? 'this member')}
                       >
@@ -180,7 +177,7 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
               {approvedMembers.map(member => (
                 <div key={member.id} className="flex items-center gap-3">
                   <Avatar className="h-9 w-9">
-                    <AvatarFallback className="bg-teal-100 text-teal-700 text-sm font-semibold">
+                    <AvatarFallback className="bg-primary/15 text-primary text-sm font-semibold">
                       {getInitials(member.profile?.full_name ?? 'U')}
                     </AvatarFallback>
                   </Avatar>
@@ -195,7 +192,7 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {member.role === 'admin' && (
-                      <div className="flex items-center gap-1 text-xs text-amber-600">
+                      <div className="flex items-center gap-1 text-xs text-attention-foreground">
                         <Crown className="h-3 w-3" />Admin
                       </div>
                     )}
@@ -206,7 +203,7 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-urgent-foreground hover:bg-urgent"
                         disabled={actionInProgress === member.id}
                         onClick={() => handleRemove(member.id, member.profile?.full_name ?? 'this member')}
                         title="Remove member"
@@ -223,7 +220,7 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
           {/* Invite more members */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Invite Family Members</CardTitle>
+              <CardTitle className="text-base">Invite family members</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
@@ -231,13 +228,13 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
                 They&apos;ll need to create a CareLog account first, then enter this code.
                 Their request will need to be approved before they can access the group.
               </p>
-              <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-4 border">
+              <div className="flex items-center gap-3 bg-muted rounded-lg p-4 border">
                 <div className="flex-1">
-                  <div className="text-xs text-muted-foreground mb-1">Invite Code</div>
-                  <div className="text-2xl font-mono font-bold tracking-widest text-gray-900">{group.invite_code}</div>
+                  <div className="text-xs text-muted-foreground mb-1">Invite code</div>
+                  <div className="text-2xl font-mono font-bold tracking-widest text-foreground">{group.invite_code}</div>
                 </div>
                 <Button variant="outline" onClick={copyCode} className="flex-shrink-0">
-                  {copied ? <Check className="h-4 w-4 mr-2 text-green-600" /> : <Copy className="h-4 w-4 mr-2" />}
+                  {copied ? <Check className="h-4 w-4 mr-2 text-primary" /> : <Copy className="h-4 w-4 mr-2" />}
                   {copied ? 'Copied!' : 'Copy'}
                 </Button>
               </div>
@@ -251,7 +248,7 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Care Recipient</CardTitle>
+                  <CardTitle className="text-base">Care recipient</CardTitle>
                   {currentUserRole === 'admin' && recipient && (
                     <DialogTrigger render={<Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" />}>
                       <Pencil className="h-3 w-3" />
@@ -265,7 +262,7 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12">
-                        <AvatarFallback className="bg-purple-100 text-purple-700 text-lg font-semibold">
+                        <AvatarFallback className="bg-primary/15 text-primary text-lg font-semibold">
                           {getInitials(recipient.name)}
                         </AvatarFallback>
                       </Avatar>
@@ -281,12 +278,12 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
 
                     {(recipient.emergency_contact || recipient.emergency_contact_phone) && (
                       <div>
-                        <div className="text-xs text-muted-foreground font-medium mb-1">Emergency Contact</div>
+                        <div className="text-xs text-muted-foreground font-medium mb-1">Emergency contact</div>
                         {recipient.emergency_contact && (
                           <div className="text-sm font-medium">{recipient.emergency_contact}</div>
                         )}
                         {recipient.emergency_contact_phone && (
-                          <a href={`tel:${recipient.emergency_contact_phone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline mt-0.5">
+                          <a href={`tel:${recipient.emergency_contact_phone}`} className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-0.5">
                             <Phone className="h-3.5 w-3.5" />
                             {recipient.emergency_contact_phone}
                           </a>
@@ -296,10 +293,10 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
 
                     {recipient.doctor_name && (
                       <div>
-                        <div className="text-xs text-muted-foreground font-medium mb-1">Primary Doctor</div>
+                        <div className="text-xs text-muted-foreground font-medium mb-1">Primary doctor</div>
                         <div className="text-sm">{recipient.doctor_name}</div>
                         {recipient.doctor_phone && (
-                          <a href={`tel:${recipient.doctor_phone}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline mt-0.5">
+                          <a href={`tel:${recipient.doctor_phone}`} className="flex items-center gap-1.5 text-sm text-primary hover:underline mt-0.5">
                             <Phone className="h-3.5 w-3.5" />
                             {recipient.doctor_phone}
                           </a>
@@ -344,7 +341,7 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
 
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Edit Care Recipient</DialogTitle>
+                <DialogTitle>Edit care recipient</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSaveRecipient} className="space-y-4 py-2">
                 <div className="grid grid-cols-2 gap-3">
@@ -359,43 +356,43 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Emergency Contact</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Emergency contact</p>
                   <div className="space-y-1.5">
-                    <Label>Contact Name</Label>
+                    <Label>Contact name</Label>
                     <Input value={editEmergencyContact} onChange={e => setEditEmergencyContact(e.target.value)} placeholder="e.g. Jane Johnson (daughter)" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Contact Phone</Label>
+                    <Label>Contact phone</Label>
                     <Input type="tel" value={editEmergencyPhone} onChange={e => setEditEmergencyPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Medical Info</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Medical info</p>
                   <div className="space-y-1.5">
                     <Label>Allergies <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
                     <Input value={editAllergies} onChange={e => setEditAllergies(e.target.value)} placeholder="e.g. Penicillin, Peanuts" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Medical Conditions <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
+                    <Label>Medical conditions <span className="text-muted-foreground font-normal">(comma-separated)</span></Label>
                     <Input value={editConditions} onChange={e => setEditConditions(e.target.value)} placeholder="e.g. Diabetes, Hypertension" />
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Primary Doctor</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Primary doctor</p>
                   <div className="space-y-1.5">
-                    <Label>Doctor Name</Label>
+                    <Label>Doctor name</Label>
                     <Input value={editDoctorName} onChange={e => setEditDoctorName(e.target.value)} placeholder="Dr. Smith" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label>Doctor Phone</Label>
+                    <Label>Doctor phone</Label>
                     <Input type="tel" value={editDoctorPhone} onChange={e => setEditDoctorPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
                   </div>
                 </div>
 
                 <div className="border-t pt-4 space-y-1.5">
-                  <Label>Additional Notes</Label>
+                  <Label>Additional notes</Label>
                   <Textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} placeholder="Any other important information..." />
                 </div>
 
@@ -410,11 +407,11 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Group Info</CardTitle>
+              <CardTitle className="text-base">Group info</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Group Name</span>
+                <span className="text-muted-foreground">Group name</span>
                 <span className="font-medium">{group.name}</span>
               </div>
               <div className="flex justify-between">

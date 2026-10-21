@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Heart, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { BrandMark } from '@/components/layout/BrandMark'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -46,13 +47,11 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100/40 dark:from-gray-900 dark:to-gray-800 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="bg-teal-600 rounded-xl p-2">
-            <Heart className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold text-gray-900 dark:text-white">CareLog</span>
+          <BrandMark className="size-9" />
+          <span className="text-2xl font-semibold tracking-[-0.02em] text-foreground">CareLog</span>
         </div>
 
         <Card>
@@ -63,7 +62,7 @@ export default function SignupPage() {
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
+                <Label htmlFor="fullName">Full name</Label>
                 <Input
                   id="fullName"
                   type="text"
@@ -101,24 +100,24 @@ export default function SignupPage() {
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={e => setTermsAccepted(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-teal-600 cursor-pointer"
+                  className="mt-0.5 h-4 w-4 rounded border-border accent-primary cursor-pointer"
                   required
                 />
                 <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
                   I agree to the{' '}
-                  <Link href="/tos" className="text-teal-600 hover:underline" onClick={e => e.stopPropagation()}>Terms of Service</Link>
+                  <Link href="/tos" className="text-primary hover:underline" onClick={e => e.stopPropagation()}>Terms of Service</Link>
                   {' '}and{' '}
-                  <Link href="/privacy" className="text-teal-600 hover:underline" onClick={e => e.stopPropagation()}>Privacy Policy</Link>
+                  <Link href="/privacy" className="text-primary hover:underline" onClick={e => e.stopPropagation()}>Privacy Policy</Link>
                 </label>
               </div>
               <Button type="submit" className="w-full" disabled={loading || !termsAccepted}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                Create Account
+                Create account
               </Button>
             </form>
             <p className="text-center text-sm text-muted-foreground mt-3">
               Already have an account?{' '}
-              <Link href="/login" className="text-teal-600 hover:underline font-medium">
+              <Link href="/login" className="text-primary hover:underline font-medium">
                 Sign in
               </Link>
             </p>

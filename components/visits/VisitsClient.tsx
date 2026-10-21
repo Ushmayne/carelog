@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ClipboardList, Plus, Loader2, Trash2, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
+import { MoodLabel } from '@/components/visits/MoodLabel'
 import type { VisitNote } from '@/types'
 import { useRouter } from 'next/navigation'
 
@@ -20,11 +21,6 @@ interface Props {
   visits: VisitNote[]
 }
 
-const moodConfig = {
-  good: { label: 'Good', emoji: '😊', bg: 'bg-green-50', text: 'text-green-700' },
-  fair: { label: 'Fair', emoji: '😐', bg: 'bg-yellow-50', text: 'text-yellow-700' },
-  poor: { label: 'Poor', emoji: '😟', bg: 'bg-red-50', text: 'text-red-700' },
-}
 
 export function VisitsClient({ careGroupId, visits }: Props) {
   const router = useRouter()
@@ -69,25 +65,22 @@ export function VisitsClient({ careGroupId, visits }: Props) {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl px-4 py-6 md:px-10 md:py-9">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <ClipboardList className="h-6 w-6 text-purple-600" />
-            Visit Notes
-          </h1>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Visit notes</h1>
           <p className="text-muted-foreground text-sm mt-1">{visits.length} visit{visits.length !== 1 ? 's' : ''} logged</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger render={<Button />}>
-            <Plus className="h-4 w-4 mr-2" />Log Visit
+            <Plus className="h-4 w-4 mr-2" />Log visit
           </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Log a Visit</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4 mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Visit Date <span className="text-muted-foreground font-normal">(change for late logging)</span></Label>
+                  <Label>Visit date <span className="text-muted-foreground font-normal">(change for late logging)</span></Label>
                   <Input type="date" value={visitDate} onChange={e => setVisitDate(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
@@ -96,13 +89,13 @@ export function VisitsClient({ careGroupId, visits }: Props) {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Overall Mood <span className="text-muted-foreground">(optional)</span></Label>
+                <Label>Overall mood <span className="text-muted-foreground">(optional)</span></Label>
                 <Select value={mood} onValueChange={v => setMood((v ?? '') as 'good' | 'fair' | 'poor')}>
                   <SelectTrigger><SelectValue placeholder="How was their mood?" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="good" label="😊 Good">😊 Good</SelectItem>
-                    <SelectItem value="fair" label="😐 Fair">😐 Fair</SelectItem>
-                    <SelectItem value="poor" label="😟 Poor">😟 Poor</SelectItem>
+                    <SelectItem value="good" label="Good">Good</SelectItem>
+                    <SelectItem value="fair" label="Fair">Fair</SelectItem>
+                    <SelectItem value="poor" label="Poor">Poor</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -139,30 +132,25 @@ export function VisitsClient({ careGroupId, visits }: Props) {
       ) : (
         <div className="space-y-4">
           {visits.map(visit => {
-            const mc = visit.mood ? moodConfig[visit.mood] : null
             return (
               <Card key={visit.id}>
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-start gap-4">
-                    <div className="bg-purple-50 rounded-lg p-3 flex-shrink-0 text-center min-w-[56px]">
-                      <div className="text-xs text-purple-600 font-medium">{format(parseISO(visit.visit_date), 'MMM')}</div>
-                      <div className="text-xl font-bold text-purple-700 leading-tight">{format(parseISO(visit.visit_date), 'd')}</div>
+                    <div className="bg-primary/10 rounded-lg p-3 flex-shrink-0 text-center min-w-[56px]">
+                      <div className="text-xs text-primary font-medium">{format(parseISO(visit.visit_date), 'MMM')}</div>
+                      <div className="text-xl font-bold text-primary leading-tight">{format(parseISO(visit.visit_date), 'd')}</div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="font-semibold text-sm">{visit.visitor?.full_name ?? 'Unknown'}</span>
-                        {mc && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${mc.bg} ${mc.text}`}>
-                            {mc.emoji} {mc.label}
-                          </span>
-                        )}
+                        {visit.mood && <MoodLabel mood={visit.mood} />}
                         {visit.duration_minutes && (
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />{visit.duration_minutes} min
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{visit.notes}</p>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{visit.notes}</p>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(visit.id)}>
                       <Trash2 className="h-4 w-4" />

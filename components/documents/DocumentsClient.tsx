@@ -23,17 +23,17 @@ interface Props {
 }
 
 const CATEGORIES: Record<CareDocument['category'], { label: string; color: string }> = {
-  medical_record: { label: 'Medical Record',  color: 'bg-blue-100 text-blue-800' },
-  insurance:      { label: 'Insurance',        color: 'bg-purple-100 text-purple-800' },
-  prescription:   { label: 'Prescription',     color: 'bg-teal-100 text-teal-800' },
-  test_result:    { label: 'Test Result',       color: 'bg-orange-100 text-orange-800' },
-  other:          { label: 'Other',             color: 'bg-gray-100 text-gray-700' },
+  medical_record: { label: 'Medical record',  color: 'bg-primary/15 text-primary' },
+  insurance:      { label: 'Insurance',        color: 'bg-primary/15 text-primary' },
+  prescription:   { label: 'Prescription',     color: 'bg-primary/15 text-primary' },
+  test_result:    { label: 'Test result',       color: 'bg-attention text-attention-foreground' },
+  other:          { label: 'Other',             color: 'bg-muted text-foreground' },
 }
 
 function fileIcon(mimeType: string) {
-  if (mimeType.startsWith('image/')) return <FileImage className="h-5 w-5 text-blue-500" />
-  if (mimeType === 'application/pdf') return <FileText className="h-5 w-5 text-red-500" />
-  return <File className="h-5 w-5 text-gray-400" />
+  if (mimeType.startsWith('image/')) return <FileImage className="h-5 w-5 text-primary" />
+  if (mimeType === 'application/pdf') return <FileText className="h-5 w-5 text-urgent-foreground" />
+  return <File className="h-5 w-5 text-muted-foreground" />
 }
 
 function formatBytes(bytes?: number) {
@@ -138,13 +138,10 @@ export function DocumentsClient({ careGroupId, documents }: Props) {
   const filtered = filter === 'all' ? documents : documents.filter(d => d.category === filter)
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl px-4 py-6 md:px-10 md:py-9">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FolderOpen className="h-6 w-6 text-indigo-600" />
-            Documents
-          </h1>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Documents</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {documents.length > 0 ? `${documents.length} documents stored` : 'Store medical records, insurance, prescriptions'}
           </p>
@@ -158,7 +155,7 @@ export function DocumentsClient({ careGroupId, documents }: Props) {
             onChange={handleFileChange}
           />
           <Button onClick={() => fileInputRef.current?.click()}>
-            <Upload className="h-4 w-4 mr-2" />Upload Document
+            <Upload className="h-4 w-4 mr-2" />Upload document
           </Button>
         </div>
       </div>
@@ -166,7 +163,7 @@ export function DocumentsClient({ careGroupId, documents }: Props) {
       {/* Upload dialog */}
       <Dialog open={open} onOpenChange={o => { setOpen(o); if (!o) { setSelectedFile(null); setDocName(''); setDocDesc(''); setDocCategory('other') } }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Upload Document</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Upload document</DialogTitle></DialogHeader>
           <form onSubmit={handleUpload} className="space-y-4 mt-2">
             {selectedFile && (
               <div className="flex items-center gap-3 p-3 bg-muted rounded-lg text-sm">
@@ -176,7 +173,7 @@ export function DocumentsClient({ careGroupId, documents }: Props) {
               </div>
             )}
             <div className="space-y-2">
-              <Label>Document Name</Label>
+              <Label>Document name</Label>
               <Input value={docName} onChange={e => setDocName(e.target.value)} required placeholder="e.g. Lab Results Jan 2025" />
             </div>
             <div className="space-y-2">

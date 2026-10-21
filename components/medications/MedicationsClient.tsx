@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from 'sonner'
 import { format, parseISO, subDays, isWithinInterval, startOfDay, endOfDay } from 'date-fns'
 import type { Medication, MedicationLog } from '@/types'
+import { buildTodaySchedule } from '@/lib/today'
 import { useRouter } from 'next/navigation'
 
 interface Props {
@@ -137,8 +138,7 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
   }
 
   // Today's schedule data
-  const todayStr = format(new Date(), 'yyyy-MM-dd')
-  const todayLogs = logs.filter(l => format(parseISO(l.administered_at), 'yyyy-MM-dd') === todayStr)
+  const todaySchedule = buildTodaySchedule(medications, logs, new Date())
   const scheduledMeds = activeMeds.filter(m => m.scheduled_times && m.scheduled_times.length > 0)
 
   // Adherence stats (last 30 days)
@@ -154,23 +154,20 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
   })
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl px-4 py-6 md:px-10 md:py-9">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Pill className="h-6 w-6 text-teal-600" />
-            Medications
-          </h1>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Medications</h1>
           <p className="text-muted-foreground text-sm mt-1">{activeMeds.length} active medications</p>
         </div>
         <div className="flex gap-2">
           {/* Log dose dialog */}
           <Dialog open={logOpen} onOpenChange={setLogOpen}>
             <DialogTrigger render={<Button variant="outline" onClick={() => openLogDialog()} />}>
-              <History className="h-4 w-4 mr-2" />Log Dose
+              <History className="h-4 w-4 mr-2" />Log dose
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Log Medication Dose</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Log medication dose</DialogTitle></DialogHeader>
               <form onSubmit={handleLog} className="space-y-4 mt-2">
                 <div className="space-y-2">
                   <Label>Medication</Label>
@@ -204,7 +201,7 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                 </div>
                 {skipped && (
                   <div className="space-y-2">
-                    <Label>Skip Reason</Label>
+                    <Label>Skip reason</Label>
                     <Input placeholder="e.g. Patient refused, ran out of medication" value={skipReason} onChange={e => setSkipReason(e.target.value)} />
                   </div>
                 )}
@@ -226,14 +223,14 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
           {/* Add medication dialog */}
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger render={<Button />}>
-              <Plus className="h-4 w-4 mr-2" />Add Medication
+              <Plus className="h-4 w-4 mr-2" />Add medication
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Add Medication</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle>Add medication</DialogTitle></DialogHeader>
               <form onSubmit={handleAddMed} className="space-y-4 mt-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Medication Name</Label>
+                    <Label>Medication name</Label>
                     <Input placeholder="e.g. Lisinopril" value={name} onChange={e => setName(e.target.value)} required />
                   </div>
                   <div className="space-y-2">
@@ -247,7 +244,7 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                 </div>
                 <div className="space-y-2">
                   <Label>
-                    Scheduled Times
+                    Scheduled times
                     <span className="text-muted-foreground font-normal"> (optional — for daily schedule tracking)</span>
                   </Label>
                   <div className="flex gap-2">
@@ -277,7 +274,7 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                         const [h, m] = t.split(':').map(Number)
                         const d = new Date(); d.setHours(h, m)
                         return (
-                          <span key={t} className="flex items-center gap-1 bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full">
+                          <span key={t} className="flex items-center gap-1 bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
                             {format(d, 'h:mm a')}
                             <button type="button" onClick={() => setScheduledTimes(prev => prev.filter(x => x !== t))}>
                               <X className="h-3 w-3" />
@@ -289,11 +286,11 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Special Instructions <span className="text-muted-foreground">(optional)</span></Label>
+                  <Label>Special instructions <span className="text-muted-foreground">(optional)</span></Label>
                   <Textarea placeholder="e.g. Take with food, avoid grapefruit" value={instructions} onChange={e => setInstructions(e.target.value)} rows={2} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Prescribing Doctor <span className="text-muted-foreground">(optional)</span></Label>
+                  <Label>Prescribing doctor <span className="text-muted-foreground">(optional)</span></Label>
                   <Input placeholder="e.g. Dr. Smith" value={doctor} onChange={e => setDoctor(e.target.value)} />
                 </div>
                 <div className="flex gap-2 pt-2">
@@ -315,11 +312,11 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
           <TabsTrigger value="schedule">
             Today&apos;s Schedule
             {scheduledMeds.length > 0 && (
-              <span className="ml-1.5 text-xs bg-teal-600 text-white rounded-full px-1.5">{scheduledMeds.length}</span>
+              <span className="ml-1.5 text-xs bg-primary text-white rounded-full px-1.5">{scheduledMeds.length}</span>
             )}
           </TabsTrigger>
           <TabsTrigger value="history">Log History ({logs.length})</TabsTrigger>
-          <TabsTrigger value="stats">Adherence Stats</TabsTrigger>
+          <TabsTrigger value="stats">Adherence stats</TabsTrigger>
         </TabsList>
 
         {/* ── Medications list ── */}
@@ -354,11 +351,10 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
           ) : (
             <div className="space-y-3">
               {scheduledMeds.map(med => {
-                const medLogs = todayLogs.filter(l => l.medication_id === med.id)
-                const givenCount = medLogs.filter(l => !l.skipped).length
-                const scheduledCount = med.scheduled_times!.length
+                const medSlots = todaySchedule.slots.filter(s => s.medication.id === med.id)
+                const givenCount = medSlots.filter(s => s.status === 'given').length
+                const scheduledCount = medSlots.length
                 const allGiven = givenCount >= scheduledCount
-                const now = new Date()
 
                 return (
                   <Card key={med.id}>
@@ -369,25 +365,22 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                             <span className="font-semibold">{med.name}</span>
                             <Badge variant="outline" className="text-xs">{med.dosage}</Badge>
                             {allGiven && (
-                              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">All done</span>
+                              <span className="text-xs bg-primary/15 text-primary px-2 py-0.5 rounded-full font-medium">All done</span>
                             )}
                           </div>
                           <div className="flex gap-2 flex-wrap mb-3">
-                            {med.scheduled_times!.map((t, i) => {
-                              const [h, m] = t.split(':').map(Number)
-                              const scheduledDate = new Date(); scheduledDate.setHours(h, m, 0, 0)
-                              const isPast = scheduledDate < now
-                              const isGiven = i < givenCount
-
-                              let statusClass = 'bg-gray-100 text-gray-500'
+                            {medSlots.map(slot => {
+                              let statusClass = 'bg-muted text-muted-foreground'
                               let StatusIcon = Clock
-                              if (isGiven) { statusClass = 'bg-green-100 text-green-700'; StatusIcon = Check }
-                              else if (isPast) { statusClass = 'bg-red-100 text-red-600'; StatusIcon = AlertCircle }
+                              if (slot.status === 'given') { statusClass = 'bg-primary/15 text-primary'; StatusIcon = Check }
+                              else if (slot.status === 'skipped') { statusClass = 'bg-urgent text-urgent-foreground'; StatusIcon = X }
+                              else if (slot.status === 'missed') { statusClass = 'bg-attention text-attention-foreground'; StatusIcon = AlertCircle }
 
                               return (
-                                <span key={t} className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${statusClass}`}>
+                                <span key={slot.key} className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium ${statusClass}`}>
                                   <StatusIcon className="h-3 w-3" />
-                                  {format(scheduledDate, 'h:mm a')}
+                                  {format(slot.time, 'h:mm a')}
+                                  {slot.status === 'skipped' && <span className="sr-only"> (skipped)</span>}
                                 </span>
                               )
                             })}
@@ -399,7 +392,7 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                           <div className="text-xs text-muted-foreground mt-1">{givenCount} of {scheduledCount} doses given today</div>
                         </div>
                         <Button variant="outline" size="sm" className="h-7 text-xs flex-shrink-0" onClick={() => openLogDialog(med.id)}>
-                          Log Dose
+                          Log dose
                         </Button>
                       </div>
                     </CardContent>
@@ -430,8 +423,8 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                     {dateLogs.map(log => (
                       <Card key={log.id}>
                         <CardContent className="py-3 px-4 flex items-center gap-4">
-                          <div className={`rounded-full p-1.5 ${log.skipped ? 'bg-red-100' : 'bg-teal-100'}`}>
-                            <Pill className={`h-4 w-4 ${log.skipped ? 'text-red-500' : 'text-teal-600'}`} />
+                          <div className={`rounded-full p-1.5 ${log.skipped ? 'bg-urgent' : 'bg-primary/15'}`}>
+                            <Pill className={`h-4 w-4 ${log.skipped ? 'text-urgent-foreground' : 'text-primary'}`} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm">{log.medication?.name}</div>
@@ -445,7 +438,7 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                             {log.skipped ? (
                               <Badge variant="destructive" className="text-xs">Skipped</Badge>
                             ) : (
-                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">Given</Badge>
+                              <Badge variant="secondary" className="text-xs bg-primary/15 text-primary">Given</Badge>
                             )}
                             <div className="text-xs text-muted-foreground">
                               {format(parseISO(log.administered_at), 'h:mm a')}
@@ -478,8 +471,8 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                       </div>
                       <span className={`text-lg font-bold ${
                         pct === null ? 'text-muted-foreground' :
-                        pct >= 80 ? 'text-green-600' :
-                        pct >= 50 ? 'text-orange-500' : 'text-red-500'
+                        pct >= 80 ? 'text-primary' :
+                        pct >= 50 ? 'text-attention-foreground' : 'text-urgent-foreground'
                       }`}>
                         {pct !== null ? `${pct}%` : 'No data'}
                       </span>
@@ -488,9 +481,9 @@ export function MedicationsClient({ careGroupId, medications, logs }: Props) {
                       <>
                         <Progress value={pct ?? 0} className="h-2 mb-1" />
                         <div className="flex justify-between text-xs text-muted-foreground">
-                          <span className="text-green-600">{given} given</span>
+                          <span className="text-primary">{given} given</span>
                           <span>{total} total doses</span>
-                          {sk > 0 && <span className="text-red-500">{sk} skipped</span>}
+                          {sk > 0 && <span className="text-urgent-foreground">{sk} skipped</span>}
                         </div>
                       </>
                     )}
@@ -517,8 +510,8 @@ function MedCard({ med, onToggle, onDelete, onLogDose }: {
   return (
     <Card className={med.active ? '' : 'opacity-60'}>
       <CardContent className="py-4 px-4 flex items-start gap-4">
-        <div className={`rounded-lg p-2 flex-shrink-0 ${med.active ? 'bg-teal-50' : 'bg-gray-50'}`}>
-          <Pill className={`h-5 w-5 ${med.active ? 'text-teal-600' : 'text-gray-400'}`} />
+        <div className={`rounded-lg p-2 flex-shrink-0 ${med.active ? 'bg-primary/10' : 'bg-muted'}`}>
+          <Pill className={`h-5 w-5 ${med.active ? 'text-primary' : 'text-muted-foreground'}`} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -533,7 +526,7 @@ function MedCard({ med, onToggle, onDelete, onLogDose }: {
                 const [h, m] = t.split(':').map(Number)
                 const d = new Date(); d.setHours(h, m)
                 return (
-                  <span key={t} className="text-xs bg-teal-50 text-teal-600 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                  <span key={t} className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded flex items-center gap-0.5">
                     <Clock className="h-2.5 w-2.5" />{format(d, 'h:mm a')}
                   </span>
                 )
@@ -546,7 +539,7 @@ function MedCard({ med, onToggle, onDelete, onLogDose }: {
         <div className="flex items-center gap-1 flex-shrink-0">
           {med.active && (
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onLogDose(med.id)}>
-              Log Dose
+              Log dose
             </Button>
           )}
           <DropdownMenu>

@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Heart, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { BrandMark } from '@/components/layout/BrandMark'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -44,13 +45,11 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-100/40 dark:from-gray-900 dark:to-gray-800 px-4">
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="bg-teal-600 rounded-xl p-2">
-            <Heart className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold text-gray-900 dark:text-white">CareLog</span>
+          <BrandMark className="size-9" />
+          <span className="text-2xl font-semibold tracking-[-0.02em] text-foreground">CareLog</span>
         </div>
 
         <Card>
@@ -61,7 +60,7 @@ export default function ResetPasswordPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
+                <Label htmlFor="password">New password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -72,7 +71,7 @@ export default function ResetPasswordPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm">Confirm Password</Label>
+                <Label htmlFor="confirm">Confirm password</Label>
                 <Input
                   id="confirm"
                   type="password"

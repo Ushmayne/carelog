@@ -25,15 +25,15 @@ interface Props {
 }
 
 const priorityConfig = {
-  low: { label: 'Low', className: 'bg-gray-100 text-gray-600' },
-  medium: { label: 'Medium', className: 'bg-teal-100 text-teal-700' },
-  high: { label: 'High', className: 'bg-orange-100 text-orange-700' },
-  urgent: { label: 'Urgent', className: 'bg-red-100 text-red-700' },
+  low: { label: 'Low', className: 'bg-muted text-muted-foreground' },
+  medium: { label: 'Medium', className: 'bg-primary/15 text-primary' },
+  high: { label: 'High', className: 'bg-attention text-attention-foreground' },
+  urgent: { label: 'Urgent', className: 'bg-urgent text-urgent-foreground' },
 }
 
 const statusConfig = {
   pending: { label: 'Pending', variant: 'outline' as const },
-  in_progress: { label: 'In Progress', variant: 'secondary' as const },
+  in_progress: { label: 'In progress', variant: 'secondary' as const },
   completed: { label: 'Completed', variant: 'default' as const },
   cancelled: { label: 'Cancelled', variant: 'secondary' as const },
 }
@@ -102,24 +102,21 @@ export function TasksClient({ careGroupId, tasks, members, currentUserId }: Prop
   const unassigned = activeTasks.filter(t => !t.assigned_to)
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl px-4 py-6 md:px-10 md:py-9">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <CheckSquare className="h-6 w-6 text-orange-600" />
-            Tasks
-          </h1>
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.025em]">Tasks</h1>
           <p className="text-muted-foreground text-sm mt-1">{activeTasks.length} active, {doneTasks.length} completed</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger render={<Button />}>
-            <Plus className="h-4 w-4 mr-2" />Add Task
+            <Plus className="h-4 w-4 mr-2" />Add task
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Create Task</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Create task</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4 mt-2">
               <div className="space-y-2">
-                <Label>Task Title</Label>
+                <Label>Task title</Label>
                 <Input placeholder="e.g. Pick up prescriptions" value={title} onChange={e => setTitle(e.target.value)} required />
               </div>
               <div className="space-y-2">
@@ -128,7 +125,7 @@ export function TasksClient({ careGroupId, tasks, members, currentUserId }: Prop
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Assign To <span className="text-muted-foreground">(optional)</span></Label>
+                  <Label>Assign to <span className="text-muted-foreground">(optional)</span></Label>
                   <Select value={assignedTo} onValueChange={v => setAssignedTo(v ?? '')}>
                     <SelectTrigger>
                       <SelectValue placeholder="Unassigned">
@@ -168,7 +165,7 @@ export function TasksClient({ careGroupId, tasks, members, currentUserId }: Prop
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Due Date <span className="text-muted-foreground">(optional)</span></Label>
+                <Label>Due date <span className="text-muted-foreground">(optional)</span></Label>
                 <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
               </div>
               <div className="space-y-2">
@@ -259,7 +256,7 @@ function TaskList({ tasks, onStatus, onDelete, currentUserId }: {
               <button
                 onClick={() => onStatus(task.id, isCompleted ? 'pending' : 'completed')}
                 className={`mt-0.5 h-5 w-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
-                  isCompleted ? 'bg-teal-600 border-teal-600' : 'border-gray-300 hover:border-teal-600'
+                  isCompleted ? 'bg-primary border-primary' : 'border-border hover:border-primary'
                 }`}
               >
                 {isCompleted && <Check className="h-3 w-3 text-white" />}
@@ -309,7 +306,7 @@ function TaskList({ tasks, onStatus, onDelete, currentUserId }: {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="in_progress">In progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
