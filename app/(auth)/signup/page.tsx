@@ -19,20 +19,24 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(false)
+  const [checkEmail, setCheckEmail] = useState(false)
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters')
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters')
       return
     }
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/dashboard`,
+      },
     })
 
     if (error) {
@@ -41,9 +45,40 @@ export default function SignupPage() {
       return
     }
 
+    // With email confirmation on, there's no session until they click the link.
+    if (!data.session) {
+      setCheckEmail(true)
+      setLoading(false)
+      return
+    }
+
     toast.success('Account created! Redirecting...')
     router.push('/dashboard')
     router.refresh()
+  }
+
+  if (checkEmail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-md">
+          <Card>
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl">Check your email</CardTitle>
+              <CardDescription>
+                We sent a confirmation link to <strong className="text-foreground">{email}</strong>.
+                Open it on this device to finish creating your account.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-sm text-muted-foreground">
+                Already confirmed?{' '}
+                <Link href="/login" className="text-primary hover:underline font-medium">Sign in</Link>
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -88,7 +123,7 @@ export default function SignupPage() {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required

@@ -30,7 +30,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         recipientName={recipient?.name}
         recipientDetail={age !== undefined ? `${age} years old` : undefined}
         activeGroupId={group?.id}
-        inviteCode={group?.invite_code}
+        emergencyToken={group?.emergency_token}
         userName={profile?.full_name?.split(' ')[0]}
         allGroups={allGroups.map(g => ({
           id: g.id,

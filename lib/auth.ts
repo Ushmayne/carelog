@@ -46,6 +46,32 @@ export const getActiveCareGroup = cache(async () => {
   return groups.find(g => g.id === cookieGroupId) ?? groups[0]
 })
 
+// Throws unless the signed-in user is an approved member of the group.
+// Use before any admin-client (service role) query, since that client skips row-level security.
+export async function requireGroupMember(careGroupId: string) {
+  const user = await getCurrentUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('group_members')
+    .select('role')
+    .eq('care_group_id', careGroupId)
+    .eq('user_id', user.id)
+    .eq('status', 'approved')
+    .maybeSingle()
+  if (!data) throw new Error('Not a member of this care group')
+
+  return { user, admin, role: data.role as 'admin' | 'member' }
+}
+
+// Same as requireGroupMember, but the user must also be a group admin.
+export async function requireGroupAdmin(careGroupId: string) {
+  const ctx = await requireGroupMember(careGroupId)
+  if (ctx.role !== 'admin') throw new Error('Only group admins can do this')
+  return ctx
+}
+
 export const getCurrentProfile = cache(async () => {
   const user = await getCurrentUser()
   if (!user) return null

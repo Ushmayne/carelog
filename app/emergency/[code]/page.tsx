@@ -1,6 +1,16 @@
+import type { Metadata } from 'next'
 import { createAdminClient } from '@/lib/supabase/server'
 import { format, parseISO, differenceInYears } from 'date-fns'
 import { Phone, AlertTriangle, Pill, Stethoscope, Heart } from 'lucide-react'
+
+// Keep this page out of search engines; it holds medical details.
+export const metadata: Metadata = {
+  title: 'Emergency info',
+  robots: { index: false, follow: false },
+}
+
+// Tokens are made by newEmergencyToken() or the database default (hex).
+const TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,64}$/
 
 interface Props {
   params: Promise<{ code: string }>
@@ -10,11 +20,13 @@ export default async function EmergencyPage({ params }: Props) {
   const { code } = await params
   const supabase = createAdminClient()
 
-  const { data: group } = await supabase
-    .from('care_groups')
-    .select('id, name')
-    .eq('invite_code', code.toLowerCase())
-    .maybeSingle()
+  const { data: group } = TOKEN_PATTERN.test(code)
+    ? await supabase
+        .from('care_groups')
+        .select('id, name')
+        .eq('emergency_token', code)
+        .maybeSingle()
+    : { data: null }
 
   if (!group) {
     return (

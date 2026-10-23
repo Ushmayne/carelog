@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { createDocument, deleteDocument } from '@/app/actions/documents'
+import { createDocument, deleteDocument, getDocumentUrl } from '@/app/actions/documents'
+import { DOCUMENT_MIME_TYPES, MAX_DOCUMENT_BYTES } from '@/lib/validations'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -67,20 +68,12 @@ export function DocumentsClient({ careGroupId, documents }: Props) {
     e.preventDefault()
     if (!selectedFile) return
 
-    const MAX_DOC_SIZE = 20 * 1024 * 1024 // 20 MB
-    if (selectedFile.size > MAX_DOC_SIZE) {
+    if (selectedFile.size > MAX_DOCUMENT_BYTES) {
       toast.error('File must be smaller than 20 MB')
       return
     }
 
-    const ALLOWED_DOC_TYPES = [
-      'application/pdf',
-      'image/jpeg', 'image/png',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain',
-    ]
-    if (!ALLOWED_DOC_TYPES.includes(selectedFile.type)) {
+    if (!(DOCUMENT_MIME_TYPES as readonly string[]).includes(selectedFile.type)) {
       toast.error('Only PDF, images, Word documents, and text files are allowed')
       return
     }
@@ -88,23 +81,22 @@ export function DocumentsClient({ careGroupId, documents }: Props) {
     setUploading(true)
     try {
       const supabase = createClient()
-      const ext = selectedFile.name.split('.').pop() ?? ''
-      const path = `${careGroupId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const rawExt = selectedFile.name.split('.').pop()?.toLowerCase() ?? ''
+      const ext = /^[a-z0-9]{1,8}$/.test(rawExt) ? `.${rawExt}` : ''
+      const path = `${careGroupId}/${crypto.randomUUID()}${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('care-documents')
-        .upload(path, selectedFile)
+        .upload(path, selectedFile, { contentType: selectedFile.type })
       if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`)
-
-      const { data: { publicUrl } } = supabase.storage.from('care-documents').getPublicUrl(path)
 
       await createDocument(careGroupId, {
         name: docName.trim(),
         description: docDesc || undefined,
         category: docCategory,
-        file_url: publicUrl,
-        file_name: selectedFile.name,
-        file_type: selectedFile.type,
+        file_path: path,
+        file_name: selectedFile.name.slice(0, 300),
+        file_type: selectedFile.type as (typeof DOCUMENT_MIME_TYPES)[number],
         file_size: selectedFile.size,
       })
 
@@ -124,14 +116,26 @@ export function DocumentsClient({ careGroupId, documents }: Props) {
   async function handleDelete(doc: CareDocument) {
     if (!window.confirm(`Delete "${doc.name}"?`)) return
     try {
-      const url = new URL(doc.file_url)
-      const pathParts = url.pathname.split('/care-documents/')
-      const filePath = pathParts[1] ?? ''
-      await deleteDocument(doc.id, filePath)
+      await deleteDocument(doc.id)
       toast.success('Document deleted')
       router.refresh()
     } catch {
       toast.error('Failed to delete')
+    }
+  }
+
+  // Files are private; ask the server for a link that expires in a minute.
+  // The tab is opened first so the browser doesn't block it as a popup.
+  // The bucket only accepts PDFs, images, Word and text files, so the opened page can't run scripts.
+  async function handleView(doc: CareDocument) {
+    const tab = window.open('', '_blank')
+    try {
+      const url = await getDocumentUrl(doc.id)
+      if (tab) tab.location.replace(url)
+      else window.location.assign(url)
+    } catch {
+      tab?.close()
+      toast.error('Could not open document')
     }
   }
 
@@ -270,7 +274,7 @@ export function DocumentsClient({ careGroupId, documents }: Props) {
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <Button
                       variant="outline" size="sm" className="h-7 text-xs gap-1"
-                      onClick={() => window.open(doc.file_url, '_blank')}
+                      onClick={() => handleView(doc)}
                     >
                       <Download className="h-3.5 w-3.5" />View
                     </Button>

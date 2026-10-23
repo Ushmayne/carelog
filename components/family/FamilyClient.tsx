@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Copy, Check, Crown, UserX, UserCheck, Clock, Pencil, Phone } from 'lucide-react'
+import { Copy, Check, Crown, UserX, UserCheck, Clock, Pencil, Phone, RefreshCw, Siren } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,7 +12,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { format, parseISO } from 'date-fns'
-import { approveGroupMember, removeGroupMember, updateCareRecipient } from '@/app/actions/care-group'
+import {
+  approveGroupMember,
+  regenerateEmergencyLink,
+  regenerateInviteCode,
+  removeGroupMember,
+  updateCareRecipient,
+} from '@/app/actions/care-group'
 import type { CareGroup, GroupMember, CareRecipient } from '@/types'
 
 interface Props {
@@ -31,6 +37,9 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
   const [actionInProgress, setActionInProgress] = useState<string | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const [regenerating, setRegenerating] = useState<'invite' | 'emergency' | null>(null)
+  const isAdmin = currentUserRole === 'admin'
 
   const [editName, setEditName] = useState(recipient?.name ?? '')
   const [editDob, setEditDob] = useState(recipient?.date_of_birth ?? '')
@@ -75,6 +84,30 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
     setCopied(true)
     toast.success('Invite code copied to clipboard')
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function copyEmergencyLink() {
+    await navigator.clipboard.writeText(`${window.location.origin}/emergency/${group.emergency_token}`)
+    setLinkCopied(true)
+    toast.success('Emergency link copied')
+    setTimeout(() => setLinkCopied(false), 2000)
+  }
+
+  async function handleRegenerate(kind: 'invite' | 'emergency') {
+    const message = kind === 'invite'
+      ? 'Make a new invite code? The current code will stop working.'
+      : 'Make a new emergency link? The current link (and any printed QR codes) will stop working.'
+    if (!confirm(message)) return
+    setRegenerating(kind)
+    try {
+      if (kind === 'invite') await regenerateInviteCode(group.id)
+      else await regenerateEmergencyLink(group.id)
+      toast.success(kind === 'invite' ? 'New invite code ready' : 'New emergency link ready')
+    } catch {
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setRegenerating(null)
+    }
   }
 
   async function handleApprove(memberId: string) {
@@ -237,6 +270,48 @@ export function FamilyClient({ group, members, currentUserId, currentUserRole }:
                   {copied ? <Check className="h-4 w-4 mr-2 text-primary" /> : <Copy className="h-4 w-4 mr-2" />}
                   {copied ? 'Copied!' : 'Copy'}
                 </Button>
+              </div>
+              {isAdmin && (
+                <Button
+                  variant="ghost" size="sm" className="mt-2 gap-1.5 text-xs text-muted-foreground"
+                  onClick={() => handleRegenerate('invite')}
+                  disabled={regenerating !== null}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${regenerating === 'invite' ? 'animate-spin' : ''}`} />
+                  Make a new code
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Public emergency page */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Siren className="h-4 w-4 text-urgent-foreground" />
+                Emergency info link
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Anyone with this link can see allergies, conditions, medications and contacts without signing in.
+                Share it only with people who may need it in an emergency. It can&apos;t be used to join the group.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={copyEmergencyLink} className="gap-2">
+                  {linkCopied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                  {linkCopied ? 'Copied!' : 'Copy link'}
+                </Button>
+                {isAdmin && (
+                  <Button
+                    variant="ghost" className="gap-1.5 text-muted-foreground"
+                    onClick={() => handleRegenerate('emergency')}
+                    disabled={regenerating !== null}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${regenerating === 'emergency' ? 'animate-spin' : ''}`} />
+                    Make a new link
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

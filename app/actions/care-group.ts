@@ -1,10 +1,32 @@
 'use server'
 
+import { randomBytes, randomInt } from 'crypto'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { careGroupSchema, parseOrThrow } from '@/lib/validations'
-import { ACTIVE_GROUP_COOKIE, getActiveCareGroup, getApprovedCareGroups } from '@/lib/auth'
+import { careGroupSchema, careRecipientSchema, inviteCodeSchema, parseOrThrow } from '@/lib/validations'
+import {
+  ACTIVE_GROUP_COOKIE,
+  getActiveCareGroup,
+  getApprovedCareGroups,
+  requireGroupAdmin,
+  requireGroupMember,
+} from '@/lib/auth'
+
+// No 0/o, 1/l/i, so codes are easy to read aloud and type.
+const INVITE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789'
+
+function newInviteCode() {
+  let code = ''
+  for (let i = 0; i < 8; i++) code += INVITE_ALPHABET[randomInt(INVITE_ALPHABET.length)]
+  return code
+}
+
+// Long random token for the public emergency page. Separate from the invite code,
+// so sharing one never hands out the other.
+function newEmergencyToken() {
+  return randomBytes(24).toString('base64url')
+}
 
 async function persistActiveGroup(groupId: string) {
   const cookieStore = await cookies()
@@ -29,7 +51,8 @@ export async function createCareGroup(name: string, recipientName: string, dateO
 
   const { data: group, error: groupError } = await admin
     .from('care_groups')
-    .insert({ name: validatedName, created_by: user.id })
+    // emergency_token comes from the column default (see supabase/security-fixes.sql)
+    .insert({ name: validatedName, created_by: user.id, invite_code: newInviteCode() })
     .select()
     .single()
 
@@ -50,13 +73,17 @@ export async function joinCareGroup(inviteCode: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  const code = inviteCodeSchema.safeParse(inviteCode)
+  if (!code.success) throw new Error('Invalid invite code')
+
   const admin = createAdminClient()
 
+  // Only the id and name go back to the browser, never the group's codes.
   const { data: group, error: groupError } = await admin
     .from('care_groups')
-    .select()
-    .eq('invite_code', inviteCode.trim().toLowerCase())
-    .single()
+    .select('id, name')
+    .eq('invite_code', code.data)
+    .maybeSingle()
 
   if (groupError || !group) throw new Error('Invalid invite code')
 
@@ -84,20 +111,12 @@ export async function getUserCareGroup() {
 }
 
 export async function getGroupMembers(careGroupId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return []
-
-  const admin = createAdminClient()
-
-  const { data: caller } = await admin
-    .from('group_members')
-    .select('id')
-    .eq('care_group_id', careGroupId)
-    .eq('user_id', user.id)
-    .eq('status', 'approved')
-    .maybeSingle()
-  if (!caller) return []
+  let admin
+  try {
+    ({ admin } = await requireGroupMember(careGroupId))
+  } catch {
+    return []
+  }
 
   const { data } = await admin
     .from('group_members')
@@ -117,29 +136,20 @@ export async function setActiveGroup(groupId: string) {
   revalidatePath('/', 'layout')
 }
 
-export async function approveGroupMember(memberId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
+async function getMemberRow(memberId: string) {
   const admin = createAdminClient()
-
   const { data: member } = await admin
     .from('group_members')
-    .select('care_group_id')
+    .select('care_group_id, user_id')
     .eq('id', memberId)
-    .single()
-
+    .maybeSingle()
   if (!member) throw new Error('Member not found')
+  return member
+}
 
-  const { data: caller } = await admin
-    .from('group_members')
-    .select('role')
-    .eq('care_group_id', member.care_group_id)
-    .eq('user_id', user.id)
-    .single()
-
-  if (caller?.role !== 'admin') throw new Error('Only admins can approve members')
+export async function approveGroupMember(memberId: string) {
+  const member = await getMemberRow(memberId)
+  const { admin } = await requireGroupAdmin(member.care_group_id)
 
   const { error } = await admin
     .from('group_members')
@@ -162,24 +172,12 @@ export async function updateCareRecipient(careGroupId: string, data: {
   doctor_phone?: string
   notes?: string
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const admin = createAdminClient()
-
-  const { data: caller } = await admin
-    .from('group_members')
-    .select('role')
-    .eq('care_group_id', careGroupId)
-    .eq('user_id', user.id)
-    .single()
-
-  if (caller?.role !== 'admin') throw new Error('Only admins can edit care recipient details')
+  const { admin } = await requireGroupAdmin(careGroupId)
+  const validated = parseOrThrow(careRecipientSchema, data)
 
   const { error } = await admin
     .from('care_recipients')
-    .update(data)
+    .update(validated)
     .eq('care_group_id', careGroupId)
 
   if (error) throw new Error(error.message)
@@ -188,28 +186,8 @@ export async function updateCareRecipient(careGroupId: string, data: {
 }
 
 export async function removeGroupMember(memberId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-
-  const admin = createAdminClient()
-
-  const { data: member } = await admin
-    .from('group_members')
-    .select('care_group_id, user_id')
-    .eq('id', memberId)
-    .single()
-
-  if (!member) throw new Error('Member not found')
-
-  const { data: caller } = await admin
-    .from('group_members')
-    .select('role')
-    .eq('care_group_id', member.care_group_id)
-    .eq('user_id', user.id)
-    .single()
-
-  if (caller?.role !== 'admin') throw new Error('Only admins can remove members')
+  const member = await getMemberRow(memberId)
+  const { admin, user } = await requireGroupAdmin(member.care_group_id)
   if (member.user_id === user.id) throw new Error('You cannot remove yourself from the group')
 
   const { error } = await admin
@@ -220,4 +198,30 @@ export async function removeGroupMember(memberId: string) {
   if (error) throw new Error(error.message)
 
   revalidatePath('/family')
+}
+
+// Makes the old invite code stop working. Pending requests are kept.
+export async function regenerateInviteCode(careGroupId: string) {
+  const { admin } = await requireGroupAdmin(careGroupId)
+
+  const { error } = await admin
+    .from('care_groups')
+    .update({ invite_code: newInviteCode() })
+    .eq('id', careGroupId)
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/', 'layout')
+}
+
+// Makes the old emergency page link stop working.
+export async function regenerateEmergencyLink(careGroupId: string) {
+  const { admin } = await requireGroupAdmin(careGroupId)
+
+  const { error } = await admin
+    .from('care_groups')
+    .update({ emergency_token: newEmergencyToken() })
+    .eq('id', careGroupId)
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/', 'layout')
 }

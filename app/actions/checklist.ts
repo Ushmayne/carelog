@@ -84,9 +84,13 @@ export async function addChecklistItem(careGroupId: string, title: string, descr
 
   const nextIndex = existing?.[0]?.order_index != null ? existing[0].order_index + 1 : 0
 
+  const cleanTitle = title.trim()
+  if (!cleanTitle || cleanTitle.length > 300) throw new Error('Title must be 1–300 characters')
+  if (description && description.length > 1000) throw new Error('Description is too long')
+
   const { error } = await admin.from('checklist_items').insert({
     care_group_id: careGroupId,
-    title: title.trim(),
+    title: cleanTitle,
     description: description?.trim() || null,
     order_index: nextIndex,
     created_by: user.id,
@@ -123,7 +127,17 @@ export async function toggleCompletion(itemId: string, careGroupId: string, comp
   const admin = createAdminClient()
   await assertGroupMember(admin, careGroupId, user.id)
 
+  // The item must belong to the group the caller is a member of.
+  const { data: item } = await admin
+    .from('checklist_items')
+    .select('id')
+    .eq('id', itemId)
+    .eq('care_group_id', careGroupId)
+    .maybeSingle()
+  if (!item) throw new Error('Checklist item not found')
+
   const date = targetDate ?? today()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid date')
 
   if (complete) {
     const { error } = await admin.from('checklist_completions').insert({
@@ -138,6 +152,7 @@ export async function toggleCompletion(itemId: string, careGroupId: string, comp
       .from('checklist_completions')
       .delete()
       .eq('checklist_item_id', itemId)
+      .eq('care_group_id', careGroupId)
       .eq('completed_date', date)
   }
 

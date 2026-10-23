@@ -11,6 +11,7 @@ export interface CareGroup {
   id: string
   name: string
   invite_code: string
+  emergency_token: string
   created_by: string
   created_at: string
   care_recipient?: CareRecipient

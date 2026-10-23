@@ -1,5 +1,16 @@
 import { z } from 'zod'
 
+// Shared by the upload form and the server check.
+export const MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
+export const DOCUMENT_MIME_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+] as const
+
 export const appointmentSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   doctor_name: z.string().max(200).optional(),
@@ -65,11 +76,29 @@ export const documentSchema = z.object({
   name: z.string().min(1, 'Name is required').max(300),
   description: z.string().max(1000).optional(),
   category: z.enum(['medical_record', 'insurance', 'prescription', 'test_result', 'other']),
-  file_url: z.string().url('Invalid file URL'),
+  // "<care group uuid>/<random uuid>.<ext>", as built by the upload form
+  file_path: z.string().regex(/^[0-9a-f-]{36}\/[0-9a-f-]{36}(\.[a-z0-9]{1,8})?$/, 'Invalid file path'),
   file_name: z.string().min(1).max(300),
-  file_type: z.string().min(1).max(100),
-  file_size: z.number().positive().optional(),
+  file_type: z.enum(DOCUMENT_MIME_TYPES),
+  file_size: z.number().int().positive().max(MAX_DOCUMENT_BYTES).optional(),
 })
+
+const optionalText = (max: number) => z.string().trim().max(max).optional()
+
+// Only these fields can be changed on a care recipient.
+export const careRecipientSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(200),
+  date_of_birth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date').optional(),
+  emergency_contact: optionalText(200),
+  emergency_contact_phone: optionalText(30),
+  allergies: z.array(z.string().trim().min(1).max(100)).max(50).optional(),
+  medical_conditions: z.array(z.string().trim().min(1).max(100)).max(50).optional(),
+  doctor_name: optionalText(200),
+  doctor_phone: optionalText(30),
+  notes: optionalText(2000),
+}).strict()
+
+export const inviteCodeSchema = z.string().trim().toLowerCase().regex(/^[a-z0-9]{6,16}$/, 'Invalid invite code')
 
 export function parseOrThrow<T>(schema: z.ZodType<T>, data: unknown): T {
   const result = schema.safeParse(data)

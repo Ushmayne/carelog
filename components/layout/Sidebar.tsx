@@ -90,7 +90,7 @@ interface SidebarProps {
   recipientName?: string
   recipientDetail?: string
   activeGroupId?: string
-  inviteCode?: string
+  emergencyToken?: string
   userName?: string
   allGroups?: GroupSummary[]
 }
@@ -100,7 +100,7 @@ export function Sidebar({
   recipientName,
   recipientDetail,
   activeGroupId,
-  inviteCode,
+  emergencyToken,
   userName,
   allGroups = [],
 }: SidebarProps) {
@@ -118,7 +118,7 @@ export function Sidebar({
   const [inviteCodeInput, setInviteCodeInput] = useState('')
   const [termsAccepted, setTermsAccepted] = useState(false)
 
-  const emergencyHref = inviteCode ? `/emergency/${inviteCode}` : undefined
+  const emergencyHref = emergencyToken ? `/emergency/${emergencyToken}` : undefined
   const personName = recipientName ?? careGroupName ?? 'Select a person'
 
   async function handleSignOut() {
